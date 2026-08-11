@@ -1,0 +1,12 @@
+[server]
+# 本地开发端口；线上 Streamlit Cloud 由平台接管
+port = 8501
+# 文件上传限制：单文件 20MB（Streamlit 默认 200MB，此处收紧以匹配产品边界）
+maxUploadSize = 20
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#1F6FEB"

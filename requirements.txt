@@ -1,0 +1,16 @@
+# 直接依赖（锁定版本，保证可复现）
+# 安装：pip install -r requirements.txt
+streamlit==1.61.1
+pandas==3.0.5
+numpy==2.5.2
+openpyxl==3.1.5
+plotly==6.9.0
+pydantic==2.13.4
+python-dotenv==1.2.2
+python-calamine==0.8.2
+charset-normalizer==3.4.9
+openai==2.53.0
+
+# 开发依赖
+pytest==9.1.1
+ruff==0.16.2
