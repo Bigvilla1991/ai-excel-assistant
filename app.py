@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from utils.logger import get_logger, setup_logging
+from utils.logger import get_logger
 
-setup_logging()
 logger = get_logger("home")
 
 st.set_page_config(
@@ -67,4 +66,4 @@ st.markdown(
     """
 )
 
-logger.info("home page rendered")
+logger.debug("home page rendered")

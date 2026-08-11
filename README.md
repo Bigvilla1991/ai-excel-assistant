@@ -14,7 +14,6 @@ py -3.12 -m venv .venv
 
 # 2. 安装依赖
 .venv\Scripts\pip install -r requirements.txt
-# 或 Windows 双击 run.bat 一键完成 2/3 步
 
 # 3. 配置密钥（可选，不配置则使用模板报告）
 copy .env.example .env
@@ -52,18 +51,21 @@ copy .env.example .env
 app.py                # 首页
 pages/                # Streamlit 多页面
 core/                 # 核心计算模块（无 Streamlit 依赖）
-models/schemas.py     # 类型化模型（Pydantic）
+models/schemas.py     # 类型化模型（Pydantic，规划中）
 utils/                # 工具（日志、文件、格式）
-prompts/              # AI 提示词
-scripts/              # 演示与测试数据生成
-tests/                # 单元与集成测试
+prompts/              # AI 提示词（规划中）
+scripts/              # 演示与测试数据生成（规划中）
+tests/                # 单元与集成测试（规划中）
 samples/              # 演示数据
 ```
+
+> 标注"规划中"的目录/文件随开发推进逐步填充。
 
 ## 开发
 
 ```bash
 .venv\Scripts\ruff check .        # 静态检查
+.venv\Scripts\ruff format .       # 代码格式化
 .venv\Scripts\pytest              # 测试
 .venv\Scripts\streamlit run app.py
 ```

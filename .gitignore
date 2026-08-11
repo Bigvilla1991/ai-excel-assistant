@@ -23,8 +23,6 @@ htmlcov/
 logs/
 samples/*.xlsx
 samples/*.csv
-!samples/.gitkeep
-!scripts/*.py
 
 # IDE
 .idea/
