@@ -47,6 +47,18 @@ numeric_candidates = list(
 dimension_candidates = [
     c.name for c in profile.columns if c.inferred_type in ("category", "text") and not c.is_id_like
 ]
+# 高基数维度提示：分组键（如姓名）会随 AI 上下文发送，隐私提示
+high_cardinality_dims = [
+    c.name
+    for c in profile.columns
+    if c.inferred_type in ("category", "text") and c.unique_count > 100
+]
+if high_cardinality_dims and dimension_candidates:
+    st.caption(
+        "⚠️ 以下维度取值较多（>100），分组标签会随 AI 上下文发送："
+        + "、".join(high_cardinality_dims[:5])
+        + "。如含身份信息请勿用作维度，或使用本地模式。"
+    )
 
 # ---- 选择器 ----
 c1, c2, c3, c4 = st.columns([2, 2, 2, 1])
@@ -195,6 +207,8 @@ if dimension is not None and agg == "sum":
         )
         if len(build_rankings(result, top_n=999)) > top_n:
             st.caption(f"仅展示前 {top_n} 名，并列边界可能被截断。")
+    # 无条件写回（空列表也写回），防止残留上一次的排名（AI 上下文/导出会读到）
+    result.rankings = rankings
 
 # ---- 散点图（两个数值列）----
 if len(numeric_candidates) >= 2:
@@ -240,6 +254,8 @@ if date_candidates:
         points = st.session_state.trends
 
         valid_points = [p for p in points if p.value is not None]
+        # 无条件写回（空列表也写回），防止残留上一次的趋势
+        result.trends = valid_points
         if valid_points:
             st.plotly_chart(
                 line_chart(
