@@ -27,10 +27,16 @@ from models.schemas import AIReport, AnalysisResult, CleaningLog, ProfileResult
 _DANGEROUS_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 # 合法数值：整数/小数/负号，排除前导零（007）、下划线（1_000）、科学计数法、NaN/inf
 _NUMERIC_PATTERN = re.compile(r"^[+-]?(?:0|[1-9]\d*)(?:\.\d+)?$")
+# 金额列名识别（命中即应用 #,##0.00 格式，方案 §14.4）
+_MONEY_COLUMN_PATTERN = re.compile(r"(金额|销售额|单价|成本|利润|价格|收入|支出|金额|额)")
 _MAX_COL_WIDTH = 30
 _MONEY_FORMAT = "#,##0.00"
 _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _HEADER_FILL = PatternFill(start_color="1F6FEB", end_color="1F6FEB", fill_type="solid")
+
+
+def _is_money_column(name: str) -> bool:
+    return bool(_MONEY_COLUMN_PATTERN.search(name))
 
 
 def sanitize_cell(value: Any) -> Any:
@@ -61,9 +67,15 @@ def sanitize_cell(value: Any) -> Any:
 def _write_sheet(
     wb: Workbook, title: str, df: pd.DataFrame, money_cols: list[str] | None = None
 ) -> None:
-    """写入数据表：表头样式、冻结、筛选、自动列宽、金额格式。"""
+    """写入数据表：表头样式、冻结、筛选、自动列宽、金额格式。
+
+    money_cols 缺省时按列名自动识别金额列（金额/销售额/单价等，§14.4）。
+    """
     ws = wb.create_sheet(title=title[:31])
-    money = set(money_cols or [])
+    if money_cols is not None:
+        money = set(money_cols)
+    else:
+        money = {str(c) for c in df.columns if _is_money_column(str(c))}
 
     headers = [str(c) for c in df.columns]
     ws.append(headers)

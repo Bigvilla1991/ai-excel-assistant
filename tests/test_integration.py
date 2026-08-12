@@ -110,6 +110,22 @@ def test_full_pipeline_upload_to_ai_report() -> None:
     assert report.source == "template"
     assert "华东" in report.findings[0]
 
+    # ⑥ 导出页：四个下载按钮全部可用
+    at6 = _page("6_结果导出.py")
+    at6.session_state["raw_df"] = raw_df
+    at6.session_state["profile"] = profile
+    at6.session_state["clean_df"] = clean_df
+    at6.session_state["analysis"] = analysis
+    at6.session_state["cleaning_log"] = at3.session_state["cleaning_log"]
+    at6.session_state["ai_report"] = report
+    at6.run()
+    assert not at6.exception
+    labels = [b.label for b in at6.download_button]
+    assert any("清洗数据" in label for label in labels)
+    assert any("分析工作簿" in label for label in labels)
+    assert any(".md" in label for label in labels)
+    assert any(".html" in label for label in labels)
+
 
 def test_guard_chain_without_upload() -> None:
     """未上传时，全部下游页面给出守卫提示且不崩溃。"""
@@ -146,3 +162,43 @@ def test_upload_new_file_resets_downstream() -> None:
     assert "ai_report" not in at.session_state
     assert at.session_state["raw_df"] is not None
     assert at.session_state["ai_mode"] == "secure"  # 偏好键保留（reset 不清偏好）
+
+
+def test_large_table_smoke() -> None:
+    """5 万行数据：核心模块全链路不崩溃、可接受耗时（冒烟）。"""
+    import time
+
+    import numpy as np
+
+    from core.analyzer import analyze, build_rankings, trend
+    from core.cleaner import apply_plan, build_plan
+    from core.profiler import profile
+
+    rng = np.random.default_rng(42)
+    n = 50_000
+    df = pd.DataFrame(
+        {
+            "地区": rng.choice(["华东", "华北", "华南", "西南"], size=n),
+            "销售额": rng.uniform(10, 1000, size=n).round(2).astype(str),
+            "日期": pd.date_range("2024-01-01", periods=n, freq="min").strftime("%Y-%m-%d"),
+        }
+    )
+    t0 = time.perf_counter()
+    prof = profile(df)
+    t1 = time.perf_counter()
+    plan = build_plan(prof, {"normalize_amount": ["销售额"]})
+    clean, log = apply_plan(df, plan)
+    t2 = time.perf_counter()
+    result = analyze(clean, "销售额", dimension="地区", agg="sum")
+    result.rankings = build_rankings(result, top_n=5)
+    result.trends = trend(clean, "销售额", "日期", granularity="month")
+    t3 = time.perf_counter()
+
+    assert prof.row_count == n
+    assert log.rows_after == n
+    assert len(result.rankings) == 4
+    assert result.trends
+    # 每阶段 < 10~15s（宽松阈值，防 CI 抖动）
+    assert t1 - t0 < 10, f"profile 耗时 {t1 - t0:.1f}s"
+    assert t2 - t1 < 15, f"清洗耗时 {t2 - t1:.1f}s"
+    assert t3 - t2 < 10, f"分析耗时 {t3 - t2:.1f}s"

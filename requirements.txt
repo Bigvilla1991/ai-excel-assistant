@@ -13,4 +13,5 @@ openai==2.53.0
 
 # 开发依赖
 pytest==9.1.1
+pytest-cov==7.1.0
 ruff==0.16.2
