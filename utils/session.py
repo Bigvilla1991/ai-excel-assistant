@@ -16,6 +16,7 @@ DATA_KEYS: tuple[str, ...] = (
     "file_meta",  # 文件元数据（行列数/sheet/编码等）
     "raw_df",  # 原始 DataFrame（只读，永不修改）
     "profile",  # ProfileResult（Day 3）
+    "profile_error",  # 体检失败标记（避免每次 rerun 重复失败计算）
     "cleaning_plan",  # CleaningPlan（Day 5）
     "clean_df",  # 清洗后 DataFrame（Day 5）
     "cleaning_log",  # CleaningLog（Day 5）
