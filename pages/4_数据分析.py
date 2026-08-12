@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from core.analyzer import _detect_numeric_cols, analyze
+from core.analyzer import analyze, build_rankings, detect_numeric_cols, trend
+from core.chart_engine import bar_chart, hbar_ranking, line_chart, scatter_chart
 from models.schemas import AnalysisResult, ProfileResult
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
@@ -40,7 +41,7 @@ id_cols = {c.name for c in profile.columns if c.is_id_like}
 numeric_candidates = list(
     dict.fromkeys(
         [c.name for c in profile.columns if c.inferred_type in ("int", "float")]
-        + [c for c in _detect_numeric_cols(data) if c not in id_cols]
+        + [c for c in detect_numeric_cols(data) if c not in id_cols]
     )
 )
 dimension_candidates = [
@@ -158,3 +159,109 @@ else:
 
 st.caption("统计口径与 Excel 一致：求和/平均忽略空值；若指标列尚未归一化，结果可能不含文本金额。")
 st.caption("下一步：从侧边栏进入 **⑤ AI 洞察** 生成解读报告。")
+
+# ================================================================ 图表区（Day 7）
+# 全部图表与上方汇总表共用同一份 AnalysisResult（同源，§11.5）
+if dimension is not None and agg == "sum":
+    st.divider()
+    st.subheader("排名与图表")
+
+    c_rank, c_n = st.columns([2, 1])
+    with c_n:
+        top_n = st.selectbox("排名数量", [5, 10, 20], index=1, key="a_topn")
+        bottom_mode = st.checkbox("BOTTOM（末位）", value=False, key="a_bottom")
+    with c_rank:
+        rankings = build_rankings(result, top_n=top_n, bottom=bottom_mode)
+        st.dataframe(
+            [
+                {
+                    "排名": r.rank,
+                    "分类": r.label,
+                    "数值": f"{r.value:,.2f}",
+                    "占比": f"{r.share:.1%}",
+                }
+                for r in rankings
+            ],
+            hide_index=True,
+            width="stretch",
+        )
+
+    if rankings:
+        st.plotly_chart(bar_chart(result), width="stretch", key="chart_bar")
+        st.plotly_chart(
+            hbar_ranking(rankings, metric, bottom=bottom_mode),
+            width="stretch",
+            key="chart_rank",
+        )
+        if len(build_rankings(result, top_n=999)) > top_n:
+            st.caption(f"仅展示前 {top_n} 名，并列边界可能被截断。")
+
+# ---- 散点图（两个数值列）----
+if len(numeric_candidates) >= 2:
+    st.divider()
+    st.subheader("散点图（两列关系）")
+    sc1, sc2 = st.columns(2)
+    x_col = sc1.selectbox("X 轴", numeric_candidates, index=0, key="a_scatter_x")
+    y_col = sc2.selectbox("Y 轴", numeric_candidates, index=1, key="a_scatter_y")
+    if x_col != y_col:
+        st.plotly_chart(scatter_chart(data, x_col, y_col), width="stretch", key="chart_scatter")
+    else:
+        st.caption("请选择两个不同的数值列。")
+
+# ---- 趋势图（日期列）----
+date_candidates = [
+    c.name for c in profile.columns if c.inferred_type == "date" and not c.is_id_like
+]
+if date_candidates:
+    st.divider()
+    st.subheader("时间趋势")
+    tc1, tc2 = st.columns([2, 1])
+    date_col = tc1.selectbox("日期列", date_candidates, key="a_date_col")
+    granularity = tc2.selectbox(
+        "时间粒度",
+        ["day", "week", "month", "quarter"],
+        index=2,
+        format_func={"day": "按日", "week": "按周", "month": "按月", "quarter": "按季度"}.get,
+        key="a_granularity",
+    )
+    # 数值指标才可做趋势（文本指标无法求和）
+    if metric not in numeric_candidates:
+        st.caption("当前指标为文本类型，无法生成数值趋势；请先清洗转换后再试。")
+    else:
+        trend_key = f"trend_{metric}_{date_col}_{granularity}_{'clean' if using_clean else 'raw'}"
+        if st.session_state.trends_key != trend_key:
+            try:
+                st.session_state.trends = trend(data, metric, date_col, granularity=granularity)
+                st.session_state.trends_key = trend_key
+            except Exception as exc:
+                log_error_safe(logger, exc, "分析-趋势")
+                st.error("趋势计算失败，日期列可能无法解析。")
+                st.session_state.trends = []
+        points = st.session_state.trends
+
+        valid_points = [p for p in points if p.value is not None]
+        if valid_points:
+            st.plotly_chart(
+                line_chart(
+                    valid_points,
+                    metric,
+                    {"day": "日", "week": "周", "month": "月", "quarter": "季度"}[granularity],
+                ),
+                width="stretch",
+                key="chart_line",
+            )
+            trend_rows = [
+                {
+                    "周期": p.period,
+                    "数值": f"{p.value:,.2f}",
+                    "环比": f"{p.change_pct:+.1f}%" if p.change_pct is not None else "—",
+                }
+                for p in valid_points
+            ]
+            st.dataframe(trend_rows, hide_index=True, width="stretch")
+            peak = max(valid_points, key=lambda p: p.value)
+            st.caption(f"峰值：**{peak.period}**（{peak.value:,.2f}）")
+        elif points:
+            st.caption("所选周期内均无有效指标值，无法生成趋势。")
+        else:
+            st.caption("日期列无法解析或没有有效日期，无法生成趋势。")

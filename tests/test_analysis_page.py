@@ -100,3 +100,37 @@ def test_analysis_cache_invalidated_by_reclean(at: AppTest) -> None:
     at.run()
     result = at.session_state["analysis"]
     assert result.overview["指标合计"] == 2100.0  # 必须是最新数据的结果
+
+
+def test_ranking_and_charts_render(at: AppTest) -> None:
+    """选择维度后：排名表、柱状图、横向排名图出现。"""
+    _load(at)
+    dim_sel = [s for s in at.selectbox if s.label == "维度（分组）"][0]
+    dim_sel.select("地区").run()
+    assert not at.exception
+
+    # 排名表渲染：分组表 + 排名表
+    assert len(at.dataframe) >= 2
+    assert at.session_state["analysis"].grouped
+
+
+def test_trend_renders_with_date_column(at: AppTest) -> None:
+    """日期列存在时：趋势图与环比表渲染。"""
+    df = _SALES.copy()
+    df["日期"] = [
+        "2024-01-05",
+        "2024-01-20",
+        "2024-02-10",
+        "2024-02-15",
+        "2024-03-05",
+        "2024-03-12",
+    ]
+    at.session_state["uploaded_name"] = "sales.csv"
+    at.session_state["raw_df"] = df
+    at.session_state["profile"] = profile(df)
+    at.run()
+    assert not at.exception
+    # 页面存在趋势标题与环比表
+    titles = [s.value for s in at.subheader]
+    assert any("时间趋势" in t for t in titles)
+    assert at.dataframe

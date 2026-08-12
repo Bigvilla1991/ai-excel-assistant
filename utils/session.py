@@ -22,6 +22,8 @@ DATA_KEYS: tuple[str, ...] = (
     "cleaning_log",  # CleaningLog（Day 5）
     "analysis",  # AnalysisResult（Day 6-8）
     "analysis_key",  # 分析参数缓存指纹（同参数不重算）
+    "trends",  # 趋势点缓存（Day 7）
+    "trends_key",  # 趋势参数缓存指纹
     "ai_report",  # AIReport | None（Day 8-9）
 )
 

@@ -31,3 +31,8 @@ def normalize_cn_dates(series: pd.Series) -> pd.Series:
     return series.str.replace(
         r"(\d{4})年(\d{1,2})月(\d{1,2})日?", r"\1-\2-\3", regex=True
     ).str.replace(r"(\d{4})年(\d{1,2})月", r"\1-\2", regex=True)
+
+
+def to_numeric(series: pd.Series) -> pd.Series:
+    """列数值化：字符串化归一 → 转数值（无法转换的值 → NaN）。"""
+    return pd.to_numeric(clean_series(series), errors="coerce")

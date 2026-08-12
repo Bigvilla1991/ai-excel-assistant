@@ -122,11 +122,14 @@ class GroupRow(BaseModel):
 
 
 class TrendPoint(BaseModel):
-    """趋势点：周期、数值、环比变化（无可比期时为 None）。"""
+    """趋势点：周期、数值、环比变化（无可比期时为 None）。
+
+    value 为 None 表示该周期内无有效值（不参与环比链）。
+    """
 
     period: str
-    value: float
-    change_pct: float | None = None  # 相对上一周期变化（%），跨期不可比时为 None
+    value: float | None = None  # 相对上一周期变化（%），跨期不可比时为 None
+    change_pct: float | None = None
 
 
 # 聚合方式与时间粒度（Literal 约束，防止拼写错误静默扩散）

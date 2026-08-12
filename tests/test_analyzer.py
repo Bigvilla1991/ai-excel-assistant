@@ -1,11 +1,11 @@
-"""DataAnalyzer 单元测试：基础统计与分组汇总（与 Excel 手算口径比对）。"""
+"""DataAnalyzer 单元测试：基础统计、分组汇总、排名与趋势。"""
 
 from __future__ import annotations
 
 import pandas as pd
 import pytest
 
-from core.analyzer import analyze, describe
+from core.analyzer import analyze, build_rankings, describe, trend
 
 SALES = pd.DataFrame(
     {
@@ -190,3 +190,118 @@ def test_numeric_dimension_label_no_decimal() -> None:
     df = pd.DataFrame({"编号": [1, 2, 1], "销售额": ["10", "20", "30"]})
     result = analyze(df, "销售额", dimension="编号", agg="sum")
     assert [g.label for g in result.grouped] == ["1", "2"]
+
+
+# ---------------------------------------------------------------- 排名
+
+
+def test_rankings_top() -> None:
+    result = analyze(SALES, "销售额", dimension="地区", agg="sum")
+    rankings = build_rankings(result, top_n=10)
+    assert [r.label for r in rankings] == ["华北", "华东", "华南"]
+    assert [r.rank for r in rankings] == [1, 2, 3]
+    assert rankings[0].value == 700.0
+    assert rankings[0].share == pytest.approx(700 / 1500)
+    assert sum(r.share for r in rankings) == pytest.approx(1.0)
+
+
+def test_rankings_bottom_and_limit() -> None:
+    result = analyze(SALES, "销售额", dimension="地区", agg="sum")
+    bottom = build_rankings(result, top_n=2, bottom=True)
+    # SALES 中华东 400 与华南 400 并列；升序取前 2（并列保持原顺序）
+    assert [r.label for r in bottom] == ["华东", "华南"]
+    assert [r.value for r in bottom] == [400.0, 400.0]
+    assert len(bottom) == 2
+
+
+def test_rankings_skip_none_groups() -> None:
+    df = pd.DataFrame({"地区": ["华东", "华南"], "销售额": ["100", None]})
+    result = analyze(df, "销售额", dimension="地区", agg="sum")
+    rankings = build_rankings(result)
+    assert [r.label for r in rankings] == ["华东"]  # 华南（None）被跳过
+
+
+# ---------------------------------------------------------------- 趋势
+
+TREND_DF = pd.DataFrame(
+    {
+        "日期": ["2024-01-05", "2024-01-20", "2024-02-10", "2024-03-05", "2024-04-12"],
+        "销售额": ["100", "200", "300", "150", "450"],
+    }
+)
+
+
+def test_trend_monthly_with_change() -> None:
+    points = trend(TREND_DF, "销售额", "日期", granularity="month")
+    assert [p.period for p in points] == ["2024-01", "2024-02", "2024-03", "2024-04"]
+    assert [p.value for p in points] == [300.0, 300.0, 150.0, 450.0]
+    # 环比：02 vs 01 = 0%；03 vs 02 = -50%；04 vs 03 = +200%
+    assert points[0].change_pct is None  # 首期无可比
+    assert points[1].change_pct == 0.0
+    assert points[2].change_pct == -50.0
+    assert points[3].change_pct == 200.0
+
+
+def test_trend_quarterly() -> None:
+    points = trend(TREND_DF, "销售额", "日期", granularity="quarter")
+    assert [p.period for p in points] == ["2024-Q1", "2024-Q2"]
+    assert points[0].value == 750.0
+    assert points[1].change_pct is not None
+
+
+def test_trend_weekly_labels() -> None:
+    points = trend(TREND_DF, "销售额", "日期", granularity="week")
+    assert points[0].period.startswith("2024-W")
+
+
+def test_trend_empty_dates() -> None:
+    df = pd.DataFrame({"日期": [None, None], "销售额": ["1", "2"]})
+    points = trend(df, "销售额", "日期", granularity="month")
+    assert points == []  # 无有效日期 → 空趋势
+
+
+def test_trend_division_by_zero() -> None:
+    df = pd.DataFrame({"日期": ["2024-01-05", "2024-02-05"], "销售额": ["0", "100"]})
+    points = trend(df, "销售额", "日期", granularity="month")
+    # 上期为 0 时环比为 None（不崩溃）
+    assert points[0].change_pct is None
+    assert points[1].change_pct is None
+
+
+def test_trend_empty_period_no_crash() -> None:
+    """某周期内指标全空：该点 value=None，环比链不断（回归：float(pd.NA)）。"""
+    df = pd.DataFrame(
+        {
+            "日期": ["2024-01-05", "2024-02-05", "2024-03-05", "2024-03-20"],
+            "销售额": ["100", None, "300", "150"],
+        }
+    )
+    points = trend(df, "销售额", "日期", granularity="month")
+    assert [p.period for p in points] == ["2024-01", "2024-02", "2024-03"]
+    assert points[0].value == 100.0
+    assert points[1].value is None  # 2 月全空
+    assert points[2].value == 450.0
+    # 环比链跳过空周期：3 月环比 = (450-100)/100 = 350%
+    assert points[2].change_pct == 350.0
+
+
+def test_trend_text_metric_no_crash() -> None:
+    """指标为文本列：返回全空周期（value=None），不崩溃。"""
+    df = pd.DataFrame({"日期": ["2024-01-05", "2024-02-05"], "销售额": ["正常", "加急"]})
+    points = trend(df, "销售额", "日期", granularity="month")
+    assert len(points) == 2
+    assert all(p.value is None for p in points)
+
+
+def test_trend_negative_base() -> None:
+    """负值基期环比：数学正确（亏损收窄场景）。"""
+    df = pd.DataFrame({"日期": ["2024-01-05", "2024-02-05"], "销售额": ["-100", "50"]})
+    points = trend(df, "销售额", "日期", granularity="month")
+    assert points[1].change_pct == -150.0
+
+
+def test_trend_year_boundary_week_label() -> None:
+    """跨年周标签：2024-12-30 归属 2025-W01（ISO 周）。"""
+    df = pd.DataFrame({"日期": ["2024-12-30", "2025-01-01"], "销售额": ["1", "2"]})
+    points = trend(df, "销售额", "日期", granularity="week")
+    assert points[0].period == "2025-W01"
