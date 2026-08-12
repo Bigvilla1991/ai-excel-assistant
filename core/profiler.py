@@ -25,6 +25,7 @@ from models.schemas import (
     ProfileResult,
     TypeName,
 )
+from utils.data_utils import clean_frame, clean_series, normalize_cn_dates
 
 # 疑似编号列名关键词（命中即标记 is_id_like，不参与数值聚合）。
 # 用完整词组避免单字"号"误伤（符号/绰号）；id 用词边界防误匹配（valid/aid）
@@ -49,19 +50,6 @@ _SAMPLE_VALUES_LIMIT = 5
 _SAMPLE_VALUE_MAX_LEN = 80
 
 
-def _clean_frame(df: pd.DataFrame) -> pd.DataFrame:
-    """整表字符串化 + 缺失归一（None/NaN/"" → pd.NA），返回副本。"""
-    return pd.DataFrame(
-        {c: df[c].astype("string").str.strip().replace("", pd.NA) for c in df.columns}
-    )
-
-
-def _clean_series(series: pd.Series) -> pd.Series:
-    """字符串化并归一缺失（None/NaN/"" → pd.NA），返回副本。"""
-    s = series.astype("string").str.strip()
-    return s.replace("", pd.NA)
-
-
 def _parse_numeric(series: pd.Series) -> tuple[pd.Series, int]:
     """数值解析：返回 (数值序列, 成功数)。"""
     nums = pd.to_numeric(series, errors="coerce")
@@ -79,14 +67,11 @@ def _is_bool_text(series: pd.Series) -> bool:
 def _parse_dates(series: pd.Series) -> tuple[pd.Series, int]:
     """日期解析（仅对匹配日期候选格式的行），返回 (datetime 序列, 成功数)。
 
-    中文格式（2024年2月1日 / 2024年2月）先归一化为 ISO 短格式再解析
-    ——pandas 3.0 的 to_datetime 不支持中文单位。
+    中文格式（2024年2月1日 / 2024年2月）先归一化为 ISO 短格式再解析。
     """
     non_null = series.dropna()
     candidates = non_null[non_null.str.match(_DATE_PATTERN)]
-    normalized = candidates.str.replace(
-        r"(\d{4})年(\d{1,2})月(\d{1,2})日?", r"\1-\2-\3", regex=True
-    ).str.replace(r"(\d{4})年(\d{1,2})月", r"\1-\2", regex=True)
+    normalized = normalize_cn_dates(candidates)
     # pandas 3.0 起 to_datetime 不再自动推断混合格式，需显式指定
     parsed = pd.to_datetime(normalized, errors="coerce", format="mixed")
     return parsed, int(parsed.notna().sum())
@@ -184,7 +169,7 @@ def profile(df: pd.DataFrame) -> ProfileResult:
 
     for name in df.columns:
         raw = df[name]
-        series = _clean_series(raw)
+        series = clean_series(raw)
         null_count = int(series.isna().sum())
         null_cells += null_count
         null_rate = null_count / row_count if row_count else 0.0
@@ -218,7 +203,7 @@ def profile(df: pd.DataFrame) -> ProfileResult:
     # 空白行：整行全空（含空字符串；"" 归一为缺失后判断）
     blank_rows = 0
     if row_count:
-        cleaned = _clean_frame(df)
+        cleaned = clean_frame(df)
         blank_rows = int(cleaned.isna().all(axis=1).sum())
     blank_cols = [c.name for c in columns if c.null_count == row_count and row_count > 0]
 

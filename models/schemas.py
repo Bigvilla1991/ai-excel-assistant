@@ -89,6 +89,18 @@ class CleaningLog(BaseModel):
     executed_at: datetime | None = None
 
 
+class CleaningPlan(BaseModel):
+    """清洗计划（build_plan 输出）：用户确认后由 apply_plan 执行。
+
+    actions 中的 rows_affected / cells_affected 为**预估**值，
+    执行后以 CleaningLog 的实际值（apply_plan 重新统计）为准。
+    """
+
+    actions: list[CleaningAction] = Field(default_factory=list)
+    rows_before: int = Field(default=0, ge=0)
+    fill_strategies: dict[str, str] = Field(default_factory=dict)  # 列名 → 缺失值策略
+
+
 # ---------------------------------------------------------------- 分析（Day 6-7 细化）
 
 
