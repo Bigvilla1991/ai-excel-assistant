@@ -21,6 +21,7 @@ DATA_KEYS: tuple[str, ...] = (
     "clean_df",  # 清洗后 DataFrame（Day 5）
     "cleaning_log",  # CleaningLog（Day 5）
     "analysis",  # AnalysisResult（Day 6-8）
+    "analysis_key",  # 分析参数缓存指纹（同参数不重算）
     "ai_report",  # AIReport | None（Day 8-9）
 )
 

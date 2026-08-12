@@ -113,6 +113,14 @@ class RankItem(BaseModel):
     rank: int = Field(ge=1)
 
 
+class GroupRow(BaseModel):
+    """维度分组条目（与 Excel 透视表同口径）。"""
+
+    label: str
+    value: float | None = None  # None = 组内无有效值
+    share: float | None = None  # 占总计比例（仅 sum 聚合填写）
+
+
 class TrendPoint(BaseModel):
     """趋势点：周期、数值、环比变化（无可比期时为 None）。"""
 
@@ -136,8 +144,9 @@ class AnalysisResult(BaseModel):
     dimension: str | None = None
     agg: AggType = "sum"
     granularity: Granularity | None = None
-    overview: dict[str, float | int | str] = Field(default_factory=dict)
-    statistics: dict[str, dict[str, float]] = Field(default_factory=dict)
+    overview: dict[str, float | int | str | None] = Field(default_factory=dict)
+    statistics: dict[str, dict[str, float | None]] = Field(default_factory=dict)
+    grouped: list[GroupRow] = Field(default_factory=list)  # 维度分组结果
     rankings: list[RankItem] = Field(default_factory=list)
     trends: list[TrendPoint] = Field(default_factory=list)
     anomalies: list[str] = Field(default_factory=list)

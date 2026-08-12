@@ -168,6 +168,10 @@ if execute_clicked:
     st.session_state.clean_df = clean_df
     st.session_state.cleaning_log = log
     st.session_state.cleaning_plan = plan_now
+    # 数据已变化：使下游分析/AI 缓存失效，避免展示旧数据的结果
+    st.session_state.analysis = None
+    st.session_state.analysis_key = None
+    st.session_state.ai_report = None
     logger.info(
         "清洗完成 | actions=%d rows %d->%d",
         len(log.actions),
