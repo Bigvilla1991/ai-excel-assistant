@@ -74,13 +74,22 @@ def collect_context_numbers(context: dict[str, Any]) -> set[float]:
     return numbers
 
 
+def _within_tolerance(number: float, allowed: float, tolerance: float) -> bool:
+    """匹配判定：绝对容差 + 相对容差（0.1%）。
+
+    报告通常四舍五入显示（如 267610.23 显示为 267,610），
+    纯绝对容差会对大数误报。
+    """
+    return abs(number - allowed) <= max(tolerance, abs(allowed) * 0.001)
+
+
 def validate_report_numbers(
     report_text: str, context: dict[str, Any], tolerance: float = 0.01
 ) -> list[str]:
     """校验报告中的数字是否均可在上下文中溯源。
 
     返回无法溯源的数字**原文**列表（去重、保序）；空列表 = 全部可溯源。
-    tolerance：浮点容差（默认 ±0.01）。
+    tolerance：绝对容差下限；大数另加 0.1% 相对容差（容忍四舍五入显示）。
     """
     allowed = collect_context_numbers(context)
     problems: list[str] = []
@@ -92,7 +101,7 @@ def validate_report_numbers(
             number = float(normalized)
         except ValueError:
             continue
-        if any(abs(number - a) <= tolerance for a in allowed):
+        if any(_within_tolerance(number, a, tolerance) for a in allowed):
             continue
         if token not in seen:
             seen.add(token)

@@ -108,7 +108,9 @@ def test_validate_tolerance() -> None:
     context = {"analysis": {"total": 100.0}}
     # 精度差异（100.000001）在容差内 → 可溯源
     assert validate_report_numbers("总计 100.000001", context) == []
-    # 严格容差外不可溯源
+    # 大数四舍五入显示（267610.23 → 267610）在相对容差内 → 可溯源
+    assert validate_report_numbers("总计 267610", {"analysis": {"total": 267610.23}}) == []
+    # 超出相对容差（101 vs 100 = 1%）→ 报错
     assert validate_report_numbers("总计 101", context) == ["101"]
 
 
