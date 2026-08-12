@@ -12,24 +12,26 @@ from core.ai_validation import validate_report_numbers
 from models.schemas import AIReport
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
+from utils.ui import (
+    handle_exception,
+    render_session_status,
+    require_analysis,
+    require_profile,
+    require_upload,
+)
 
 st.set_page_config(page_title="AI 洞察", page_icon="🤖", layout="wide")
 init_session_state()
+render_session_status()
 logger = get_logger("ai_page")
 
 st.title("⑤ AI 洞察")
 st.caption("Python 负责准确计算，AI 负责解释结果 —— 报告数字全部来自左侧统计结果，可溯源。")
 
 # ---- 页面守卫 ----
-if st.session_state.raw_df is None:
-    st.info("请先在「① 文件上传」页上传并确认数据。")
-    st.stop()
-if st.session_state.profile is None:
-    st.info("请先进入「② 数据体检」生成体检结果。")
-    st.stop()
-if st.session_state.analysis is None:
-    st.info("请先进入「④ 数据分析」完成一次分析（选择指标与维度），再生成解读。")
-    st.stop()
+require_upload()
+require_profile()
+require_analysis()
 
 # ---- 模式选择 ----
 mode_help = {
@@ -114,9 +116,7 @@ if generate_clicked:
             )
             logger.info("AI 报告完成 | mode=%s", mode)
         except Exception as exc:
-            log_error_safe(logger, exc, "AI-生成")
-            st.error("报告生成失败，请重试。")
-            st.stop()
+            handle_exception(exc, logger, "报告生成", message="报告生成失败，请重试。")
 
 report: AIReport | None = st.session_state.ai_report
 if report is None:

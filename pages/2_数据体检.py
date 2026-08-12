@@ -9,17 +9,17 @@ from models.schemas import ProfileResult
 from utils.format_utils import TYPE_LABELS_ORDER, type_description, type_label
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
+from utils.ui import render_session_status, require_upload
 
 st.set_page_config(page_title="数据体检", page_icon="🔍", layout="wide")
 init_session_state()
+render_session_status()
 logger = get_logger("quality_page")
 
 st.title("② 数据体检")
 
 # ---- 页面守卫：必须先上传 ----
-if st.session_state.raw_df is None:
-    st.info("请先在「① 文件上传」页上传并确认数据，再进行体检。")
-    st.stop()
+require_upload()
 
 # ---- 计算体检结果（会话内缓存：确认上传后 raw_df 不可变，只算一次）----
 if st.session_state.profile is None and not st.session_state.profile_error:
@@ -27,12 +27,18 @@ if st.session_state.profile is None and not st.session_state.profile_error:
         try:
             st.session_state.profile = profile(st.session_state.raw_df)
         except Exception as exc:
+            from utils.errors import AppError
+
             log_error_safe(logger, exc, "体检-计算")
-            st.session_state.profile_error = True
+            # 缓存失败标记（避免每次 rerun 重算）；AppError 消息透出展示
+            st.session_state.profile_error = str(exc) if isinstance(exc, AppError) else True
             st.stop()
 
 if st.session_state.profile_error:
-    st.error("数据体检失败，请检查数据后重试，或回到「① 文件上传」重新确认文件。")
+    if isinstance(st.session_state.profile_error, str):
+        st.error(st.session_state.profile_error)
+    else:
+        st.error("数据体检失败，请检查数据后重试，或回到「① 文件上传」重新确认文件。")
     st.stop()
 
 result: ProfileResult = st.session_state.profile

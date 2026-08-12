@@ -7,22 +7,25 @@ import streamlit as st
 from core.analyzer import analyze, build_rankings, detect_numeric_cols, trend
 from core.chart_engine import bar_chart, hbar_ranking, line_chart, scatter_chart
 from models.schemas import AnalysisResult, ProfileResult
-from utils.logger import get_logger, log_error_safe
+from utils.logger import get_logger
 from utils.session import init_session_state
+from utils.ui import (
+    handle_exception,
+    render_session_status,
+    require_profile,
+    require_upload,
+)
 
 st.set_page_config(page_title="数据分析", page_icon="📈", layout="wide")
 init_session_state()
+render_session_status()
 logger = get_logger("analysis_page")
 
 st.title("④ 数据分析")
 
 # ---- 页面守卫 ----
-if st.session_state.raw_df is None:
-    st.info("请先在「① 文件上传」页上传并确认数据。")
-    st.stop()
-if st.session_state.profile is None:
-    st.info("请先进入「② 数据体检」生成体检结果。")
-    st.stop()
+require_upload()
+require_profile()
 
 # ---- 数据选择：优先使用清洗后数据 ----
 using_clean = st.session_state.clean_df is not None
@@ -112,8 +115,7 @@ if st.session_state.analysis is None or st.session_state.analysis_key != cache_k
             st.session_state.analysis = result
             st.session_state.analysis_key = cache_key
         except Exception as exc:
-            log_error_safe(logger, exc, "分析-计算")
-            st.error("统计计算失败，请调整选择后重试。")
+            handle_exception(exc, logger, "统计计算", message="统计计算失败，请调整选择后重试。")
             st.stop()
 
 result: AnalysisResult = st.session_state.analysis
@@ -248,8 +250,13 @@ if date_candidates:
                 st.session_state.trends = trend(data, metric, date_col, granularity=granularity)
                 st.session_state.trends_key = trend_key
             except Exception as exc:
-                log_error_safe(logger, exc, "分析-趋势")
-                st.error("趋势计算失败，日期列可能无法解析。")
+                handle_exception(
+                    exc,
+                    logger,
+                    "趋势计算",
+                    message="趋势计算失败，日期列可能无法解析。",
+                    fatal=False,
+                )
                 st.session_state.trends = []
         points = st.session_state.trends
 

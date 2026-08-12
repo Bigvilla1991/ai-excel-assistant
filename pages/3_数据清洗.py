@@ -7,22 +7,25 @@ import streamlit as st
 from core.cleaner import apply_plan, build_plan
 from models.schemas import CleaningPlan
 from utils.format_utils import type_label
-from utils.logger import get_logger, log_error_safe
+from utils.logger import get_logger
 from utils.session import init_session_state
+from utils.ui import (
+    handle_exception,
+    render_session_status,
+    require_profile,
+    require_upload,
+)
 
 st.set_page_config(page_title="数据清洗", page_icon="🧹", layout="wide")
 init_session_state()
+render_session_status()
 logger = get_logger("cleaning_page")
 
 st.title("③ 数据清洗")
 
 # ---- 页面守卫 ----
-if st.session_state.raw_df is None:
-    st.info("请先在「① 文件上传」页上传并确认数据。")
-    st.stop()
-if st.session_state.profile is None:
-    st.info("请先进入「② 数据体检」生成体检结果。")
-    st.stop()
+require_upload()
+require_profile()
 
 profile = st.session_state.profile
 by_name = {c.name: c for c in profile.columns}
@@ -145,15 +148,13 @@ if preview_clicked:
     try:
         st.session_state.cleaning_plan = build_plan(profile, choices)
     except Exception as exc:
-        log_error_safe(logger, exc, "清洗-生成计划")
-        st.error("生成清洗计划失败，请调整选项后重试。")
+        handle_exception(exc, logger, "生成清洗计划", fatal=False)
 
 if execute_clicked:
     try:
         plan_now = build_plan(profile, choices)
     except Exception as exc:
-        log_error_safe(logger, exc, "清洗-生成计划")
-        st.error("生成清洗计划失败，原始数据未受影响。")
+        handle_exception(exc, logger, "生成清洗计划", fatal=False)
         st.stop()
     if not plan_now.actions:
         st.warning("当前没有选择任何清洗动作。")
@@ -162,9 +163,12 @@ if execute_clicked:
         try:
             clean_df, log = apply_plan(st.session_state.raw_df, plan_now)
         except Exception as exc:
-            log_error_safe(logger, exc, "清洗-执行")
-            st.error("清洗执行失败，原始数据未受影响。")
-            st.stop()
+            handle_exception(
+                exc,
+                logger,
+                "清洗执行",
+                message="清洗执行失败，原始数据未受影响，请调整选项后重试。",
+            )
     st.session_state.clean_df = clean_df
     st.session_state.cleaning_log = log
     st.session_state.cleaning_plan = plan_now

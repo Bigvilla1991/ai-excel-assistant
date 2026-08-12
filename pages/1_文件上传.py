@@ -9,13 +9,14 @@ from core.excel_reader import (
     list_sheets,
     read_file,
 )
-from utils.errors import AppError
 from utils.file_utils import ENCODING_OPTIONS, MAX_ROWS, detect_encoding
-from utils.logger import get_logger, log_error_safe
+from utils.logger import get_logger
 from utils.session import init_session_state, reset_downstream
+from utils.ui import handle_exception, render_session_status
 
 st.set_page_config(page_title="文件上传", page_icon="📁", layout="wide")
 init_session_state()
+render_session_status()
 logger = get_logger("upload_page")
 
 st.title("① 文件上传")
@@ -48,13 +49,8 @@ try:
     else:
         sheet_options = list_sheets(uploaded.name, raw_bytes)
         detected_encoding = None
-except AppError as exc:
-    st.error(str(exc))
-    st.stop()
 except Exception as exc:
-    log_error_safe(logger, exc, "上传页-文件校验")
-    st.error("文件校验失败，请检查文件后重试。")
-    st.stop()
+    handle_exception(exc, logger, "文件校验")
 
 # ---- 选择器（Sheet / 编码 / 表头）----
 # 控件 key 含上传唯一标识 file_id：更换文件时 key 变化 → 状态自动重置，
@@ -88,13 +84,8 @@ try:
     df, meta = read_file(
         uploaded.name, raw_bytes, sheet=sheet, encoding=encoding, has_header=has_header
     )
-except AppError as exc:
-    st.error(str(exc))
-    st.stop()
 except Exception as exc:
-    log_error_safe(logger, exc, "上传页-读取文件")
-    st.error("文件读取失败，请检查文件是否损坏。")
-    st.stop()
+    handle_exception(exc, logger, "文件读取")
 
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("行数", f"{meta['row_count']:,}")
