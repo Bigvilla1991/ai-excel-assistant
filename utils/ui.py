@@ -34,6 +34,22 @@ _PAGE_PATHS = [
 ]
 _PRIVACY_PATH = "pages/7_隐私与说明.py"
 
+# Public UI surface kept explicit for Streamlit Cloud and static import tooling.
+__all__ = [
+    "apply_theme",
+    "handle_exception",
+    "render_empty_state",
+    "render_footer",
+    "render_next_step",
+    "render_page_header",
+    "render_section_heading",
+    "render_session_status",
+    "require_analysis",
+    "require_profile",
+    "require_upload",
+]
+
+
 _THEME_CSS = """
 <style>
 :root {
