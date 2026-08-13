@@ -19,6 +19,47 @@ from utils.data_utils import to_numeric
 MAX_CATEGORIES: int = 20
 _SCATTER_SAMPLE_LIMIT: int = 2000
 
+# 品牌样式（现代 SaaS 简洁风）
+BRAND_COLORS: list[str] = [
+    "#4F46E5",
+    "#0EA5E9",
+    "#10B981",
+    "#F59E0B",
+    "#EF4444",
+    "#8B5CF6",
+    "#14B8A6",
+    "#F97316",
+    "#6366F1",
+    "#22C55E",
+]
+_FONT_FAMILY = '"Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif'
+_GRID_COLOR = "#EEF2F7"
+
+
+def _style(fig: go.Figure, height: int = 420) -> go.Figure:
+    """统一图表样式：字体、网格、背景、圆角。"""
+    fig.update_layout(
+        font=dict(family=_FONT_FAMILY, size=12, color="#334155"),
+        title_font=dict(size=15, color="#0F172A"),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=height,
+        margin=dict(l=40, r=20, t=60, b=40),
+        hoverlabel=dict(bgcolor="#0F172A", font_color="#FFFFFF"),
+    )
+    fig.update_xaxes(
+        gridcolor=_GRID_COLOR, zerolinecolor=_GRID_COLOR, title_font=dict(color="#64748B")
+    )
+    fig.update_yaxes(
+        gridcolor=_GRID_COLOR, zerolinecolor=_GRID_COLOR, title_font=dict(color="#64748B")
+    )
+    return fig
+
+
+def _bar_color() -> list[str]:
+    """品牌色循环（按分类数量）。"""
+    return BRAND_COLORS
+
 
 def bar_chart(result: AnalysisResult, max_categories: int = MAX_CATEGORIES) -> go.Figure:
     """柱状图：维度分组结果（分类 + 数值）。
@@ -35,14 +76,14 @@ def bar_chart(result: AnalysisResult, max_categories: int = MAX_CATEGORIES) -> g
             text=[f"{g.value:,.0f}" for g in items],
             textposition="outside",
             hovertemplate="%{x}<br>%{y:,.2f}<extra></extra>",
+            marker_color=_bar_color(),
         )
     )
+    _style(fig)
     fig.update_layout(
         title=f"{result.metric} 按{result.dimension or '全部'}汇总",
         xaxis_title=result.dimension or "分类",
         yaxis_title=result.metric,
-        height=420,
-        margin=dict(l=40, r=20, t=60, b=40),
     )
     fig.update_xaxes(tickangle=-30)
     return fig
@@ -61,14 +102,15 @@ def hbar_ranking(rankings: list[RankItem], metric: str, bottom: bool = False) ->
             text=[f"{s:.1%}" for s in shares],
             textposition="outside",
             hovertemplate="%{y}<br>%{x:,.2f}（占比 %{text}）<extra></extra>",
+            marker_color=_bar_color(),
         )
     )
     title_mode = "BOTTOM" if bottom else "TOP"
+    _style(fig, height=60 + 34 * len(rankings))
     fig.update_layout(
         title=f"{metric} 排名（{title_mode} {len(rankings)}）",
         xaxis_title=metric,
         yaxis_title="",
-        height=60 + 34 * len(rankings),
         margin=dict(l=120, r=60, t=60, b=40),
     )
     return fig
@@ -95,6 +137,8 @@ def line_chart(trends: list[TrendPoint], metric: str, granularity: str = "") -> 
             y=values,
             mode="lines+markers",
             hovertemplate="%{x}<br>%{y:,.2f}<extra></extra>",
+            line=dict(color="#4F46E5", width=2.5),
+            marker=dict(size=6, color="#4F46E5"),
         )
     )
     for m in markers:
@@ -107,12 +151,11 @@ def line_chart(trends: list[TrendPoint], metric: str, granularity: str = "") -> 
             yshift=10,
             font=dict(size=11, color="crimson"),
         )
+    _style(fig)
     fig.update_layout(
         title=f"{metric} 趋势（{granularity}）" if granularity else f"{metric} 趋势",
         xaxis_title="周期",
         yaxis_title=metric,
-        height=420,
-        margin=dict(l=40, r=20, t=60, b=40),
     )
     return fig
 
@@ -133,15 +176,14 @@ def scatter_chart(df: pd.DataFrame, x_col: str, y_col: str) -> go.Figure:
             x=xs,
             y=ys,
             mode="markers",
-            marker=dict(size=6, opacity=0.6),
+            marker=dict(size=6, opacity=0.65, color="#4F46E5"),
             hovertemplate="%{x:,.2f}<br>%{y:,.2f}<extra></extra>",
         )
     )
+    _style(fig)
     fig.update_layout(
         title=f"{x_col} × {y_col} 散点图",
         xaxis_title=x_col,
         yaxis_title=y_col,
-        height=420,
-        margin=dict(l=40, r=20, t=60, b=40),
     )
     return fig

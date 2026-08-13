@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import streamlit as st
 
+from utils.ui import apply_theme, render_footer
+
+apply_theme()
+
 st.set_page_config(page_title="隐私与说明", page_icon="🔒", layout="centered")
 
 st.title("隐私与数据处理说明")
@@ -32,3 +36,5 @@ st.markdown(
 st.caption(
     "对财务、医疗、人事等敏感数据，请先确认组织政策与数据授权，AI 结论不视为专业审计或决策依据。"
 )
+
+render_footer()

@@ -9,14 +9,15 @@ from models.schemas import ProfileResult
 from utils.format_utils import TYPE_LABELS_ORDER, type_description, type_label
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
-from utils.ui import render_session_status, require_upload
+from utils.ui import apply_theme, render_page_header, render_session_status, require_upload
 
 st.set_page_config(page_title="数据体检", page_icon="🔍", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("quality_page")
 
-st.title("② 数据体检")
+render_page_header("数据体检", "自动识别字段类型、空值、重复与异常值，并给出健康评分。", step=2)
 
 # ---- 页面守卫：必须先上传 ----
 require_upload()
@@ -52,6 +53,7 @@ c4.metric("空值格", f"{result.null_cells:,}")
 c5.metric("重复行", f"{result.duplicate_rows:,}")
 
 score = result.health_score
+st.progress(score / 100, text=f"健康评分 {score}/100")
 has_error = any(i.severity == "error" for i in result.issues)
 error_count = sum(1 for i in result.issues if i.severity == "error")
 if has_error:

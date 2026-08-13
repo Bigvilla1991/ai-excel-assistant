@@ -13,7 +13,9 @@ from models.schemas import AIReport
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
 from utils.ui import (
+    apply_theme,
     handle_exception,
+    render_page_header,
     render_session_status,
     require_analysis,
     require_profile,
@@ -22,11 +24,13 @@ from utils.ui import (
 
 st.set_page_config(page_title="AI 洞察", page_icon="🤖", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("ai_page")
 
-st.title("⑤ AI 洞察")
-st.caption("Python 负责准确计算，AI 负责解释结果 —— 报告数字全部来自左侧统计结果，可溯源。")
+render_page_header(
+    "AI 洞察", "Python 负责准确计算，AI 负责解释结果 —— 报告数字全部来自统计结果，可溯源。", step=5
+)
 
 # ---- 页面守卫 ----
 require_upload()

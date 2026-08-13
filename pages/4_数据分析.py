@@ -10,7 +10,9 @@ from models.schemas import AnalysisResult, ProfileResult
 from utils.logger import get_logger
 from utils.session import init_session_state
 from utils.ui import (
+    apply_theme,
     handle_exception,
+    render_page_header,
     render_session_status,
     require_profile,
     require_upload,
@@ -18,10 +20,11 @@ from utils.ui import (
 
 st.set_page_config(page_title="数据分析", page_icon="📈", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("analysis_page")
 
-st.title("④ 数据分析")
+render_page_header("数据分析", "基础统计、维度分组、排名与时间趋势，口径与 Excel 一致。", step=4)
 
 # ---- 页面守卫 ----
 require_upload()
@@ -135,15 +138,16 @@ m4.metric(
 # ---- 维度分组表 ----
 if dimension is not None:
     st.subheader(f"按「{dimension}」分组汇总")
-    rows = [
-        {
-            "分类": g.label,
-            "数值": f"{g.value:,.2f}" if g.value is not None else "（无有效值）",
-            "占比": f"{g.share:.1%}" if g.share is not None else "—",
-        }
-        for g in result.grouped
-    ]
-    st.dataframe(rows, hide_index=True, width="stretch")
+    rows = [{"分类": g.label, "数值": g.value, "占比": g.share} for g in result.grouped]
+    st.dataframe(
+        rows,
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "数值": st.column_config.NumberColumn(format="%.2f"),
+            "占比": st.column_config.NumberColumn(format="%.1f%%"),
+        },
+    )
 else:
     st.subheader("总体汇总")
     for g in result.grouped:
@@ -187,17 +191,13 @@ if dimension is not None and agg == "sum":
     with c_rank:
         rankings = build_rankings(result, top_n=top_n, bottom=bottom_mode)
         st.dataframe(
-            [
-                {
-                    "排名": r.rank,
-                    "分类": r.label,
-                    "数值": f"{r.value:,.2f}",
-                    "占比": f"{r.share:.1%}",
-                }
-                for r in rankings
-            ],
+            [{"排名": r.rank, "分类": r.label, "数值": r.value, "占比": r.share} for r in rankings],
             hide_index=True,
             width="stretch",
+            column_config={
+                "数值": st.column_config.NumberColumn(format="%.2f"),
+                "占比": st.column_config.NumberColumn(format="%.1f%%"),
+            },
         )
 
     if rankings:
@@ -274,14 +274,17 @@ if date_candidates:
                 key="chart_line",
             )
             trend_rows = [
-                {
-                    "周期": p.period,
-                    "数值": f"{p.value:,.2f}",
-                    "环比": f"{p.change_pct:+.1f}%" if p.change_pct is not None else "—",
-                }
-                for p in valid_points
+                {"周期": p.period, "数值": p.value, "环比": p.change_pct} for p in valid_points
             ]
-            st.dataframe(trend_rows, hide_index=True, width="stretch")
+            st.dataframe(
+                trend_rows,
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    "数值": st.column_config.NumberColumn(format="%.2f"),
+                    "环比": st.column_config.NumberColumn(format="%+.1f%%"),
+                },
+            )
             peak = max(valid_points, key=lambda p: p.value)
             st.caption(f"峰值：**{peak.period}**（{peak.value:,.2f}）")
         elif points:

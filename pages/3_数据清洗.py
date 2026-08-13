@@ -10,7 +10,9 @@ from utils.format_utils import type_label
 from utils.logger import get_logger
 from utils.session import init_session_state
 from utils.ui import (
+    apply_theme,
     handle_exception,
+    render_page_header,
     render_session_status,
     require_profile,
     require_upload,
@@ -18,10 +20,11 @@ from utils.ui import (
 
 st.set_page_config(page_title="数据清洗", page_icon="🧹", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("cleaning_page")
 
-st.title("③ 数据清洗")
+render_page_header("数据清洗", "选择清洗动作，先预览后执行；原始数据始终保留，可随时撤销。", step=3)
 
 # ---- 页面守卫 ----
 require_upload()

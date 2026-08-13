@@ -12,15 +12,15 @@ from core.excel_reader import (
 from utils.file_utils import ENCODING_OPTIONS, MAX_ROWS, detect_encoding
 from utils.logger import get_logger
 from utils.session import init_session_state, reset_downstream
-from utils.ui import handle_exception, render_session_status
+from utils.ui import apply_theme, handle_exception, render_page_header, render_session_status
 
 st.set_page_config(page_title="文件上传", page_icon="📁", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("upload_page")
 
-st.title("① 文件上传")
-st.caption("支持 .xlsx / .csv，单文件不超过 20MB，建议不超过 10 万行。")
+render_page_header("文件上传", "支持 .xlsx / .csv，单文件不超过 20MB，建议不超过 10 万行。", step=1)
 
 # ---- 已载入数据提示 ----
 if st.session_state.raw_df is not None:

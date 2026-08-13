@@ -17,7 +17,9 @@ from core.exporter import (
 from utils.logger import get_logger
 from utils.session import init_session_state
 from utils.ui import (
+    apply_theme,
     handle_exception,
+    render_page_header,
     render_session_status,
     require_profile,
     require_upload,
@@ -25,11 +27,13 @@ from utils.ui import (
 
 st.set_page_config(page_title="结果导出", page_icon="📦", layout="wide")
 init_session_state()
+apply_theme()
 render_session_status()
 logger = get_logger("export_page")
 
-st.title("⑥ 结果导出")
-st.caption("导出内容与页面展示同源，数字可追溯。导出的 Excel 可继续编辑使用。")
+render_page_header(
+    "结果导出", "导出内容与页面展示同源，数字可追溯；导出的 Excel 可继续编辑使用。", step=6
+)
 
 # ---- 页面守卫 ----
 require_upload()
