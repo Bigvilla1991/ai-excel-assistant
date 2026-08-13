@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 import argparse
-import random
 import shutil
 from pathlib import Path
 
@@ -69,6 +68,7 @@ def generate_all(clean: bool = False) -> list[Path]:
     if clean and SAMPLES_DIR.exists():
         shutil.rmtree(SAMPLES_DIR)
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    (SAMPLES_DIR / ".gitkeep").touch()  # 保持空目录可被 git 跟踪
 
     produced: list[Path] = []
 
