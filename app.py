@@ -24,7 +24,7 @@ render_session_status()
 logger = get_logger("home")
 
 
-def _go_to_upload(uploaded: st.runtime.uploaded_file_manager.UploadedFile | None) -> None:
+def _go_to_upload(uploaded: object | None) -> None:
     if uploaded is not None:
         st.session_state.pending_upload = {
             "name": uploaded.name,
