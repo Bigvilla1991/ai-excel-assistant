@@ -44,83 +44,86 @@ if st.session_state.profile_error:
 
 result: ProfileResult = st.session_state.profile
 
-# ---- 概览 ----
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("健康评分", f"{result.health_score}", help="满分 100，扣分项见下方问题清单")
-c2.metric("总行数", f"{result.row_count:,}")
-c3.metric("列数", f"{result.column_count:,}")
-c4.metric("空值格", f"{result.null_cells:,}")
-c5.metric("重复行", f"{result.duplicate_rows:,}")
+# ---- 结果区（卡片）：评分与概览 ----
+with st.container(border=True):
+    score = result.health_score
+    st.progress(score / 100, text=f"健康评分 {score}/100")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("健康评分", f"{result.health_score}", help="满分 100，扣分项见下方问题清单")
+    c2.metric("总行数", f"{result.row_count:,}")
+    c3.metric("列数", f"{result.column_count:,}")
+    c4.metric("空值格", f"{result.null_cells:,}")
+    c5.metric("重复行", f"{result.duplicate_rows:,}")
 
-score = result.health_score
-st.progress(score / 100, text=f"健康评分 {score}/100")
-has_error = any(i.severity == "error" for i in result.issues)
-error_count = sum(1 for i in result.issues if i.severity == "error")
-if has_error:
-    # 横幅口径与问题清单一致：存在 error 级问题时，即使分数较高也明确提示
-    st.warning(
-        f"整体评分 {score} 分，但有 **{error_count} 个需优先处理的问题**"
-        f"（红色条目），建议先处理后再分析。"
-    )
-elif score >= 90:
-    st.success(f"数据整体质量**良好**（{score} 分）。")
-elif score >= 70:
-    st.warning(f"数据质量**一般**（{score} 分），建议处理下方问题后再分析。")
-else:
-    st.error(f"数据质量**较差**（{score} 分），强烈建议先清洗数据。")
+    has_error = any(i.severity == "error" for i in result.issues)
+    error_count = sum(1 for i in result.issues if i.severity == "error")
+    if has_error:
+        # 横幅口径与问题清单一致：存在 error 级问题时，即使分数较高也明确提示
+        st.warning(
+            f"整体评分 {score} 分，但有 **{error_count} 个需优先处理的问题**"
+            f"（红色条目），建议先处理后再分析。"
+        )
+    elif score >= 90:
+        st.success(f"数据整体质量**良好**（{score} 分）。")
+    elif score >= 70:
+        st.warning(f"数据质量**一般**（{score} 分），建议处理下方问题后再分析。")
+    else:
+        st.error(f"数据质量**较差**（{score} 分），强烈建议先清洗数据。")
 
-# ---- 问题清单 ----
-st.subheader("问题清单")
-issues = result.issues
-if not issues:
-    st.success("未发现明显问题。")
-else:
-    for issue in issues:
-        if issue.severity == "error":
-            st.error(issue.message)
-        elif issue.severity == "warning":
-            st.warning(issue.message)
-        else:
-            st.info(issue.message)
+# ---- 问题清单（卡片）----
+with st.container(border=True):
+    st.markdown("**问题清单**")
+    issues = result.issues
+    if not issues:
+        st.success("未发现明显问题。")
+    else:
+        for issue in issues:
+            if issue.severity == "error":
+                st.error(issue.message)
+            elif issue.severity == "warning":
+                st.warning(issue.message)
+            else:
+                st.info(issue.message)
 
-# ---- 字段类型表 ----
-st.subheader("字段概览")
-st.caption("类型为自动推断，可在「③ 数据清洗」中手动调整转换。")
+# ---- 字段概览（卡片）----
+with st.container(border=True):
+    st.markdown("**字段概览**")
+    st.caption("类型为自动推断，可在「③ 数据清洗」中手动调整转换。")
 
-rows = []
-for col in result.columns:
-    flags = []
-    if col.is_id_like:
-        flags.append("编号列")
-    if col.high_missing:
-        flags.append("高缺失")
-    if col.is_constant:
-        flags.append("常量")
-    if col.type_conflict:
-        flags.append("混合类型")
-    if col.date_issues:
-        flags.append(f"日期异常×{col.date_issues}")
-    if col.anomaly_count:
-        flags.append(f"异常值×{col.anomaly_count}")
-    rows.append(
-        {
-            "字段": col.name,
-            "推断类型": type_label(col.inferred_type),
-            "唯一值数": col.unique_count,
-            "空值数": col.null_count,
-            "空值率": f"{col.null_rate:.1%}",
-            "问题标记": "、".join(flags) or "—",
-            "样例值": "、".join(col.sample_values) or "（全空）",
-        }
-    )
-st.dataframe(rows, hide_index=True, width="stretch")
+    rows = []
+    for col in result.columns:
+        flags = []
+        if col.is_id_like:
+            flags.append("编号列")
+        if col.high_missing:
+            flags.append("高缺失")
+        if col.is_constant:
+            flags.append("常量")
+        if col.type_conflict:
+            flags.append("混合类型")
+        if col.date_issues:
+            flags.append(f"日期异常×{col.date_issues}")
+        if col.anomaly_count:
+            flags.append(f"异常值×{col.anomaly_count}")
+        rows.append(
+            {
+                "字段": col.name,
+                "推断类型": type_label(col.inferred_type),
+                "唯一值数": col.unique_count,
+                "空值数": col.null_count,
+                "空值率": f"{col.null_rate:.1%}",
+                "问题标记": "、".join(flags) or "—",
+                "样例值": "、".join(col.sample_values) or "（全空）",
+            }
+        )
+    st.dataframe(rows, hide_index=True, width="stretch")
 
-# ---- 类型说明（可折叠）----
-with st.expander("各字段类型说明", expanded=False):
-    for type_name in TYPE_LABELS_ORDER:
-        desc = type_description(type_name)
-        if desc:
-            st.markdown(f"- **{type_label(type_name)}**：{desc}")
-    st.caption("异常值仅提示、不自动删除；删除或填充需在「③ 数据清洗」确认。")
+    # ---- 类型说明（可折叠）----
+    with st.expander("各字段类型说明", expanded=False):
+        for type_name in TYPE_LABELS_ORDER:
+            desc = type_description(type_name)
+            if desc:
+                st.markdown(f"- **{type_label(type_name)}**：{desc}")
+        st.caption("异常值仅提示、不自动删除；删除或填充需在「③ 数据清洗」确认。")
 
 st.caption("下一步：从侧边栏进入 **③ 数据清洗**，选择要执行的清洗动作。")

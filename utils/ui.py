@@ -25,6 +25,30 @@ _AI_MODE_LABELS = {
 # 流程步骤定义（侧边栏/页头指示器共用）
 STEPS = ["文件上传", "数据体检", "数据清洗", "数据分析", "AI 洞察", "结果导出"]
 
+# 侧边栏品牌区
+_BRAND_SIDEBAR = """
+<div style="padding: 2px 0 10px 0;">
+  <div style="font-size: 1.15rem; font-weight: 800; color: #4F46E5; letter-spacing: -0.01em;">
+    📊 AI Excel 助手
+  </div>
+  <div style="font-size: 0.78rem; color: #94A3B8;">上传 · 体检 · 清洗 · 分析 · 解读 · 导出</div>
+</div>
+"""
+
+
+def render_session_status(step: int | None = None) -> None:
+    """侧边栏会话状态：品牌 + 已载入文件 + AI 模式 + 当前步骤。"""
+    with st.sidebar:
+        st.markdown(_BRAND_SIDEBAR, unsafe_allow_html=True)
+        st.divider()
+        if st.session_state.raw_df is not None:
+            st.caption(f"📄 已载入：{st.session_state.uploaded_name}")
+        mode = st.session_state.ai_mode
+        st.caption(f"🤖 AI 模式：{_AI_MODE_LABELS.get(mode, mode)}")
+        if step is not None:
+            st.caption(f"📍 当前：第 {step} 步 · {STEPS[step - 1]}")
+
+
 # 全局品牌 CSS（一次性注入，幂等）
 _THEME_CSS = """
 <style>
@@ -236,13 +260,3 @@ def require_analysis() -> None:
     if st.session_state.analysis is None:
         st.info("请先进入「④ 数据分析」完成一次分析（选择指标与维度）。")
         st.stop()
-
-
-def render_session_status() -> None:
-    """侧边栏会话状态：已载入文件 + 当前 AI 模式（5 个功能页调用）。"""
-    with st.sidebar:
-        st.divider()
-        if st.session_state.raw_df is not None:
-            st.caption(f"📄 已载入：{st.session_state.uploaded_name}")
-        mode = st.session_state.ai_mode
-        st.caption(f"🤖 AI 模式：{_AI_MODE_LABELS.get(mode, mode)}")

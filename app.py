@@ -50,63 +50,49 @@ for col, (title, desc) in zip(cols, flow, strict=True):
 
 st.write("")
 
-# ---- 能力卡片 ----
+# ---- 能力卡片（3 大卡）----
 st.markdown("#### 核心能力")
 capabilities = [
     (
-        "🔍 数据体检",
-        "自动识别字段类型（编号列不参与求和）、IQR 异常检测、"
-        "中文日期兼容（2024年2月1日）、健康评分与问题清单。",
+        "🔍 体检与清洗",
+        "自动识别字段类型（编号列不参与求和）、IQR 异常检测、中文日期兼容、健康评分与问题清单；"
+        "去重、金额归一化（￥1,234.50→1234.5）、统一日期、缺失值策略，全程预览可撤销。",
     ),
     (
-        "🧹 一键清洗",
-        "空白行/列、去重、金额归一化（￥1,234.50→1234.5）、"
-        "统一日期、缺失值策略；全程预览、可撤销，原始数据永不被覆盖。",
+        "📈 统计与图表",
+        "基础统计、维度分组、TOP/BOTTOM 排名、按日/周/月/季趋势（含环比），口径与 Excel 透视表一致；"
+        "折线（峰值标注）、柱状、横向排名、散点交互图表，与汇总表同源可追溯。",
     ),
     (
-        "📈 统计分析",
-        "基础统计、维度分组、TOP/BOTTOM 排名、按日/周/月/季趋势"
-        "（含环比）；统计口径与 Excel 透视表一致。",
-    ),
-    (
-        "📊 交互图表",
-        "折线（峰值/低点标注）、柱状、横向排名、散点；图表与汇总表共用同一份计算结果，数字可追溯。",
-    ),
-    (
-        "🤖 AI 解读",
-        "DeepSeek 生成固定 7 段报告；只发送结构化汇总，"
-        "数字交叉校验防幻觉；无密钥时自动使用本地模板。",
-    ),
-    (
-        "📦 安全导出",
-        "9 Sheet 分析工作簿、公式注入防护、Markdown/HTML 报告；"
-        "本地模式完全离线，适配敏感数据场景。",
+        "🤖 解读与导出",
+        "DeepSeek 生成固定 7 段报告，只发送结构化汇总、数字交叉校验防幻觉，无密钥自动用本地模板；"
+        "9 Sheet 分析工作簿、公式注入防护、Markdown/HTML 报告，本地模式完全离线。",
     ),
 ]
-for i in range(0, 6, 3):
-    row_cols = st.columns(3)
-    for col, (title, desc) in zip(row_cols, capabilities[i : i + 3], strict=True):
-        with col:
-            st.markdown(
-                f'<div class="aec-card"><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True
-            )
+cols = st.columns(3)
+for col, (title, desc) in zip(cols, capabilities, strict=True):
+    with col:
+        st.markdown(
+            f'<div class="aec-card"><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True
+        )
 
 st.write("")
 
-# ---- 上传入口 ----
-st.markdown("#### 开始使用")
-uploaded = st.file_uploader(
-    "选择 Excel（.xlsx）或 CSV 文件",
-    type=["xlsx", "csv"],
-    help="单文件不超过 20MB，建议不超过 10 万行。超出时系统会提示，不会卡死。",
-)
-if uploaded is not None:
-    st.success(f"已选择：{uploaded.name}（{uploaded.size / 1024:.0f} KB）")
-    st.markdown("👉 请前往侧边栏 **「① 文件上传」** 页面完成解析与预览。")
-else:
-    st.info(
-        "未选择文件。可先使用示例数据体验：运行 `python scripts\\generate_sample_data.py` 生成演示数据。"
+# ---- 上传入口（卡片容器）----
+with st.container(border=True):
+    st.markdown("#### 开始使用")
+    uploaded = st.file_uploader(
+        "选择 Excel（.xlsx）或 CSV 文件",
+        type=["xlsx", "csv"],
+        help="单文件不超过 20MB，建议不超过 10 万行。超出时系统会提示，不会卡死。",
     )
+    if uploaded is not None:
+        st.success(f"已选择：{uploaded.name}（{uploaded.size / 1024:.0f} KB）")
+        st.markdown("👉 请前往侧边栏 **「① 文件上传」** 页面完成解析与预览。")
+    else:
+        st.caption(
+            "未选择文件。可先运行 `python scripts\\generate_sample_data.py` 生成演示数据体验完整流程。"
+        )
 
 # ---- 隐私提示 ----
 st.divider()

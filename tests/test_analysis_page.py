@@ -130,7 +130,8 @@ def test_trend_renders_with_date_column(at: AppTest) -> None:
     at.session_state["profile"] = profile(df)
     at.run()
     assert not at.exception
-    # 页面存在趋势标题与环比表
-    titles = [s.value for s in at.subheader]
-    assert any("时间趋势" in t for t in titles)
+    # Tabs 包含趋势；日期列选择器存在；环比表渲染（tabs 内容全部渲染）
+    tab_labels = [t.label for t in at.tabs]
+    assert any("趋势" in label for label in tab_labels)
+    assert any(s.label == "日期列" for s in at.selectbox)
     assert at.dataframe
