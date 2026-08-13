@@ -1,40 +1,47 @@
-"""页面 7：隐私与数据处理说明（在线演示环境展示用）。"""
+"""隐私与数据处理说明。"""
 
 from __future__ import annotations
 
 import streamlit as st
 
-from utils.ui import apply_theme, render_footer
+from utils.session import init_session_state
+from utils.ui import (
+    apply_theme,
+    render_footer,
+    render_page_header,
+    render_section_heading,
+    render_session_status,
+)
 
+st.set_page_config(page_title="隐私与说明", page_icon="🔒", layout="wide")
+init_session_state()
 apply_theme()
+render_session_status()
 
-st.set_page_config(page_title="隐私与说明", page_icon="🔒", layout="centered")
+render_page_header("隐私与数据处理", "先了解数据去向，再选择适合当前文件的运行模式。")
 
-st.title("隐私与数据处理说明")
+render_section_heading("在线演示边界", "上传文件只用于当前会话，不作为长期存储")
+with st.container(border=True):
+    st.markdown(
+        """
+        - 请勿上传真实业务敏感数据，包括个人隐私、财务机密和人事信息。
+        - 文件只在当前会话中解析、计算和生成导出结果；刷新或会话结束后即释放。
+        - 本地模式不会向任何模型发送数据，适合敏感文件或离线处理。
+        - 如需处理真实业务数据，建议下载项目并在组织允许的本地环境运行。
+        """
+    )
 
-st.subheader("本在线演示环境")
-st.markdown(
-    """
-    1. **请勿上传真实业务敏感数据**（含个人隐私、财务机密、人事信息等）。
-    2. 上传文件仅用于当前会话的处理与演示，**不提供存储与保留**，刷新或会话结束后即释放。
-    3. 演示环境默认关闭 AI 调用（本地模式），不将任何数据发送给第三方模型。
-    4. 如需处理真实敏感数据，请下载并本地运行本项目。
-    """
-)
+render_section_heading("三种运行模式", "模式会影响发送范围，不会改变本地统计口径")
+with st.container(border=True):
+    st.dataframe(
+        [
+            {"模式": "本地模式", "数据去向": "不发送给模型", "适用场景": "敏感数据；仅需本地模板报告"},
+            {"模式": "安全 AI 模式", "数据去向": "字段名、汇总统计、趋势、异常摘要", "适用场景": "常规业务数据"},
+            {"模式": "增强 AI 模式", "数据去向": "安全模式 + 每字段最多 3 个样例值", "适用场景": "需要更细的语义解读"},
+        ],
+        hide_index=True,
+        width="stretch",
+    )
 
-st.subheader("三种运行模式")
-st.markdown(
-    """
-    | 模式 | 数据去向 | 适用场景 |
-    |---|---|---|
-    | 本地模式 | 不发送任何数据给模型，仅本地计算 + 模板报告 | 敏感数据 |
-    | 安全 AI 模式（默认） | 仅发送字段名、汇总统计、趋势和异常摘要 | 常规业务数据 |
-    | 增强 AI 模式 | 经明确同意后发送少量脱敏样本 | 需要更细的 AI 分析时 |
-    """
-)
-
-st.caption(
-    "对财务、医疗、人事等敏感数据，请先确认组织政策与数据授权，AI 结论不视为专业审计或决策依据。"
-)
-
+st.warning("财务、医疗、人事等敏感数据请先确认组织政策与数据授权；AI 结论不视为专业审计或决策依据。")
 render_footer()

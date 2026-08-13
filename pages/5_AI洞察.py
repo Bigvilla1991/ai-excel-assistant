@@ -15,7 +15,9 @@ from utils.session import init_session_state
 from utils.ui import (
     apply_theme,
     handle_exception,
+    render_next_step,
     render_page_header,
+    render_section_heading,
     render_session_status,
     require_analysis,
     require_profile,
@@ -25,7 +27,7 @@ from utils.ui import (
 st.set_page_config(page_title="AI 洞察", page_icon="🤖", layout="wide")
 init_session_state()
 apply_theme()
-render_session_status()
+render_session_status(step=5)
 logger = get_logger("ai_page")
 
 render_page_header(
@@ -56,6 +58,7 @@ def _api_key() -> str | None:
 
 
 # ---- 操作区（卡片）：模式与生成 ----
+render_section_heading("生成洞察", "选择数据发送范围；没有 API 密钥时也可以使用本地模板")
 with st.container(border=True):
     mode = st.radio(
         "AI 模式",
@@ -76,7 +79,7 @@ with st.container(border=True):
     if mode != "local" and not has_api_key:
         st.warning(
             "当前未配置 DEEPSEEK_API_KEY（本地 .env 或 Streamlit Cloud Secrets），"
-            "将使用**本地模板报告**。配置密钥后可生成 AI 解读。"
+            "生成时会自动使用**本地模板报告**，不会发送任何数据。"
         )
 
     # ---- 上下文（数据与④分析页同源）----
@@ -104,9 +107,8 @@ with st.container(border=True):
     generate_clicked = col_btn.button(
         "生成 AI 报告",
         type="primary",
-        disabled=(mode != "local" and not has_api_key),
         key="gen_btn",
-        help="生成固定结构的 7 段解读报告",
+        help="有密钥时调用 AI；没有密钥时自动生成本地模板报告",
     )
     if col_info.button("清空报告", key="clear_btn"):
         st.session_state.ai_report = None
@@ -130,6 +132,7 @@ if report is None:
     st.stop()
 
 # ---- 报告展示（卡片分段）----
+render_section_heading("报告预览", "数字来自当前分析结果；AI 内容会经过程序交叉校验")
 with st.container(border=True):
     if report.source == "template":
         st.info("本报告由**本地模板**生成（未调用模型），数字全部来自统计结果。")
@@ -164,3 +167,4 @@ st.caption(f"报告生成时间：{report.generated_at:%Y-%m-%d %H:%M} ｜ 数�
 st.caption(
     "提示：AI 解读仅供参考，不视为专业审计或决策依据；关键结论请以「④ 数据分析」的统计表为准。"
 )
+render_next_step(6, "将清洗数据、分析工作簿和报告打包导出。")

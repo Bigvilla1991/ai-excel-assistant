@@ -20,6 +20,7 @@ from utils.ui import (
     apply_theme,
     handle_exception,
     render_page_header,
+    render_section_heading,
     render_session_status,
     require_profile,
     require_upload,
@@ -51,9 +52,10 @@ src_name = Path(st.session_state.uploaded_name or "data").stem
 if not cleaned_used:
     st.caption("当前未执行清洗，导出将使用**原始数据**（可先到「③ 数据清洗」处理）。")
 
-# ---- 导出区（卡片）：2×2 下载网格 ----
+# ---- 导出区（卡片）：按交付目标组织下载 ----
+render_section_heading("交付文件", "优先下载分析工作簿；其他格式适合继续编辑或分享")
 with st.container(border=True):
-    st.markdown("**导出文件**")
+    st.markdown("**推荐交付包**")
     st.caption("所有导出在浏览器内即时生成，不会在服务器留存。")
 
     # 缓存：同一数据与参数不重复生成（避免每次 rerun 全量重建，10 万行场景）
@@ -176,6 +178,7 @@ with st.container(border=True):
             st.caption("HTML 报告：请先到「⑤ AI 洞察」生成报告。")
 
 # ---- 使用说明 ----
+render_section_heading("导出说明", "所有文件在浏览器内即时生成，不会在服务器留存")
 with st.expander("导出内容说明", expanded=False):
     st.markdown(
         """

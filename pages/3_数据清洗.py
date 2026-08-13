@@ -12,7 +12,9 @@ from utils.session import init_session_state
 from utils.ui import (
     apply_theme,
     handle_exception,
+    render_next_step,
     render_page_header,
+    render_section_heading,
     render_session_status,
     require_profile,
     require_upload,
@@ -48,6 +50,7 @@ date_cols = [c.name for c in profile.columns if c.inferred_type == "date"]
 missing_cols = [c.name for c in profile.columns if c.null_count > 0 and not c.is_id_like]
 
 # ---- 操作区（卡片）：动作选择 ----
+render_section_heading("选择清洗动作", "每个动作都可以先预览影响范围，原始数据始终保留")
 with st.container(border=True):
     with st.form("cleaning_form"):
         st.markdown("**清洗动作**")
@@ -196,6 +199,7 @@ if execute_clicked:
 # ---- 结果区（卡片）：计划预览 / 变更摘要 ----
 plan: CleaningPlan | None = st.session_state.cleaning_plan
 if plan and plan.actions:
+    render_section_heading("清洗计划", "执行前确认动作、影响列和预计影响范围")
     with st.container(border=True):
         st.markdown("**清洗计划预览**")
         st.caption("以下为预计影响，执行后以实际统计为准。")
@@ -220,6 +224,7 @@ elif plan is not None:
 
 # ---- 已执行：变更摘要 / 预览 / 撤销 ----
 if cleaned:
+    render_section_heading("执行结果", "查看实际影响，必要时撤销并重新选择")
     with st.container(border=True):
         st.markdown("**清洗结果**")
         log = st.session_state.cleaning_log
@@ -242,4 +247,4 @@ if cleaned:
             st.session_state.cleaning_plan = None
             st.rerun()
 
-    st.caption("下一步：从侧边栏进入 **④ 数据分析**（默认使用清洗后的数据）。")
+    render_next_step(4, "使用清洗后的数据进入数据分析。")

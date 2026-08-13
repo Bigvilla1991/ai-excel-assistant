@@ -1,4 +1,8 @@
-"""AI Excel 数据处理助手 —— 首页（Hero + 能力卡片 + 上传入口 + 隐私提示）。"""
+"""AI Excel 数据处理助手工作台。
+
+首页只负责三件事：说明价值、接收文件、把用户带入任务流。具体处理
+由「文件上传」页完成，避免首页和解析页各自维护一套逻辑。
+"""
 
 from __future__ import annotations
 
@@ -6,108 +10,105 @@ import streamlit as st
 
 from utils.logger import get_logger
 from utils.session import init_session_state
-from utils.ui import apply_theme, render_footer
-
-init_session_state()
-apply_theme()
-logger = get_logger("home")
+from utils.ui import apply_theme, render_footer, render_section_heading, render_session_status
 
 st.set_page_config(
     page_title="AI Excel 数据处理助手",
     page_icon="📊",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
+init_session_state()
+apply_theme()
+render_session_status()
+logger = get_logger("home")
 
-# ---- Hero ----
+
+def _go_to_upload(uploaded: st.runtime.uploaded_file_manager.UploadedFile | None) -> None:
+    if uploaded is not None:
+        st.session_state.pending_upload = {
+            "name": uploaded.name,
+            "data": uploaded.getvalue(),
+            "type": uploaded.type,
+        }
+    st.switch_page("pages/1_文件上传.py")
+
+
 st.markdown(
-    """
-    <div class="aec-hero">
-      <h1>AI Excel 数据处理助手</h1>
-      <p>上传文件 → 数据体检 → 一键清洗 → 统计分析 → AI 解读 → 导出结果，<br>
-      把高频、重复、容易出错的 Excel 整理工作，变成几分钟的可复用流程。</p>
-    </div>
-    """,
+    '<div class="aec-hero">'
+    '<div class="aec-eyebrow">DATA WORKSPACE · V1.1</div>'
+    '<h1>把 Excel 整理工作，变成一条清晰的任务流。</h1>'
+    '<p>上传文件后，系统会依次完成解析、体检、清洗、分析、AI 解读与结果交付。'
+    '每一步都保留原始数据、处理依据和可追溯结果。</p>'
+    '<div class="aec-hero-meta"><span class="aec-meta-pill">支持 XLSX / CSV</span>'
+    '<span class="aec-meta-pill">本地计算优先</span><span class="aec-meta-pill">结果可导出</span></div>'
+    '</div>',
     unsafe_allow_html=True,
 )
 
-# ---- 六步流程 ----
-st.markdown("#### 完整工作流")
+render_section_heading("从文件到结论", "一条主线完成数据准备、探索和交付")
 flow = [
-    ("① 文件上传", "XLSX / CSV，自动识别编码与工作表"),
-    ("② 数据体检", "空值、重复、异常值，健康评分"),
-    ("③ 数据清洗", "去重、格式统一、缺失策略，可撤销"),
-    ("④ 数据分析", "分组、排名、趋势，口径与 Excel 一致"),
-    ("⑤ AI 洞察", "固定结构报告，数字可溯源防幻觉"),
-    ("⑥ 结果导出", "Excel / Markdown / HTML，开箱可用"),
+    ("01", "上传与解析", "识别工作表、编码和表头，先确认数据再进入后续步骤。"),
+    ("02", "数据体检", "快速查看空值、重复、类型冲突和异常值，明确优先问题。"),
+    ("03", "清洗与复核", "逐项选择清洗动作，预览影响范围，执行后仍可撤销。"),
+    ("04", "分析与洞察", "围绕指标、维度和时间趋势生成统计结果与可解释结论。"),
 ]
-cols = st.columns(6)
-for col, (title, desc) in zip(cols, flow, strict=True):
-    with col:
-        st.markdown(
-            f'<div class="aec-card"><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True
-        )
+for row_start in range(0, len(flow), 2):
+    cols = st.columns(2)
+    for col, (number, title, desc) in zip(cols, flow[row_start : row_start + 2], strict=False):
+        with col:
+            st.markdown(
+                f'<div class="aec-card"><div class="aec-card-kicker">{number}</div>'
+                f'<h3>{title}</h3><p>{desc}</p></div>',
+                unsafe_allow_html=True,
+            )
 
 st.write("")
+with st.container():
+    st.markdown(
+        '<div class="aec-action-card"><h2>开始一个数据任务</h2>'
+        '<p>文件只在当前会话中处理。上传后可在解析页选择工作表、编码和表头，并先预览再确认。</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    uploaded = st.file_uploader(
+        "选择 Excel 或 CSV 文件",
+        type=["xlsx", "csv"],
+        key="home_uploader",
+        help="单文件不超过 20MB，建议不超过 10 万行。",
+    )
+    action_col, demo_col = st.columns([1, 1])
+    with action_col:
+        if st.button("解析文件并继续", type="primary", key="home_continue", width="stretch"):
+            _go_to_upload(uploaded)
+    with demo_col:
+        st.page_link("pages/1_文件上传.py", label="进入文件上传页", icon="📁", width="stretch")
+    if uploaded is not None:
+        st.caption(f"已选择：{uploaded.name} · {uploaded.size / 1024:.0f} KB。点击上方按钮进入解析。")
+    else:
+        st.caption("也可以直接进入文件上传页，或使用项目 samples 目录中的演示数据。")
 
-# ---- 能力卡片（3 大卡）----
-st.markdown("#### 核心能力")
+render_section_heading("你将得到什么", "把计算、证据和交付放在同一个会话里")
 capabilities = [
-    (
-        "🔍 体检与清洗",
-        "自动识别字段类型（编号列不参与求和）、IQR 异常检测、中文日期兼容、健康评分与问题清单；"
-        "去重、金额归一化（￥1,234.50→1234.5）、统一日期、缺失值策略，全程预览可撤销。",
-    ),
-    (
-        "📈 统计与图表",
-        "基础统计、维度分组、TOP/BOTTOM 排名、按日/周/月/季趋势（含环比），口径与 Excel 透视表一致；"
-        "折线（峰值标注）、柱状、横向排名、散点交互图表，与汇总表同源可追溯。",
-    ),
-    (
-        "🤖 解读与导出",
-        "DeepSeek 生成固定 7 段报告，只发送结构化汇总、数字交叉校验防幻觉，无密钥自动用本地模板；"
-        "9 Sheet 分析工作簿、公式注入防护、Markdown/HTML 报告，本地模式完全离线。",
-    ),
+    ("质量有依据", "健康评分、问题清单与字段类型来自确定性计算，避免只给结论不解释。"),
+    ("清洗可回退", "原始数据始终保留，清洗动作先预览后执行，结果异常时可以撤销重来。"),
+    ("交付可复用", "输出清洗工作簿、分析工作簿和 AI 报告，方便继续编辑、复核和分享。"),
 ]
 cols = st.columns(3)
 for col, (title, desc) in zip(cols, capabilities, strict=True):
     with col:
-        st.markdown(
-            f'<div class="aec-card"><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True
-        )
+        st.markdown(f'<div class="aec-card"><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True)
 
-st.write("")
-
-# ---- 上传入口（卡片容器）----
-with st.container(border=True):
-    st.markdown("#### 开始使用")
-    uploaded = st.file_uploader(
-        "选择 Excel（.xlsx）或 CSV 文件",
-        type=["xlsx", "csv"],
-        help="单文件不超过 20MB，建议不超过 10 万行。超出时系统会提示，不会卡死。",
-    )
-    if uploaded is not None:
-        st.success(f"已选择：{uploaded.name}（{uploaded.size / 1024:.0f} KB）")
-        st.markdown("👉 请前往侧边栏 **「① 文件上传」** 页面完成解析与预览。")
-    else:
-        st.caption(
-            "未选择文件。可先运行 `python scripts\\generate_sample_data.py` 生成演示数据体验完整流程。"
-        )
-
-# ---- 隐私提示 ----
-st.divider()
 with st.expander("隐私与安全说明", expanded=False):
     st.markdown(
         """
-        - **本地模式**：数据不发送给任何模型，仅本地计算 + 模板报告
-        - **安全 AI 模式（默认）**：仅发送字段名、汇总统计、趋势和异常摘要，不发送完整记录
-        - **增强 AI 模式**：经你明确同意后，才发送每字段最多 3 个样例值
+        - **本地模式**：数据不发送给任何模型，仅使用本地计算与模板报告。
+        - **安全 AI 模式**：只发送字段名、汇总统计、趋势和异常摘要，不发送完整记录。
+        - **增强 AI 模式**：明确选择后才附加每个字段最多 3 个样例值。
 
-        API 密钥仅存放于环境变量（`.env`）或 Streamlit Cloud Secrets，不进入代码库。
-        对财务、医疗、人事等敏感数据，请先确认组织政策与数据授权。
+        API 密钥仅存放在环境变量或 Streamlit Secrets 中。财务、医疗、人事等敏感数据请先确认组织政策与授权范围。
         """
     )
 
 render_footer()
-
 logger.debug("home page rendered")

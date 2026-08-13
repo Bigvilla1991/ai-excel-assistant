@@ -9,12 +9,19 @@ from models.schemas import ProfileResult
 from utils.format_utils import TYPE_LABELS_ORDER, type_description, type_label
 from utils.logger import get_logger, log_error_safe
 from utils.session import init_session_state
-from utils.ui import apply_theme, render_page_header, render_session_status, require_upload
+from utils.ui import (
+    apply_theme,
+    render_next_step,
+    render_page_header,
+    render_section_heading,
+    render_session_status,
+    require_upload,
+)
 
 st.set_page_config(page_title="数据体检", page_icon="🔍", layout="wide")
 init_session_state()
 apply_theme()
-render_session_status()
+render_session_status(step=2)
 logger = get_logger("quality_page")
 
 render_page_header("数据体检", "自动识别字段类型、空值、重复与异常值，并给出健康评分。", step=2)
@@ -45,6 +52,7 @@ if st.session_state.profile_error:
 result: ProfileResult = st.session_state.profile
 
 # ---- 结果区（卡片）：评分与概览 ----
+render_section_heading("质量总览", "先处理高优问题，再进入清洗和分析")
 with st.container(border=True):
     score = result.health_score
     st.progress(score / 100, text=f"健康评分 {score}/100")
@@ -70,9 +78,16 @@ with st.container(border=True):
     else:
         st.error(f"数据质量**较差**（{score} 分），强烈建议先清洗数据。")
 
+    if result.issues:
+        st.markdown(
+            '<div class="aec-kpi-note">建议顺序：先查看红色问题，再到数据清洗页选择动作；'
+            "异常值默认只提示，不会自动删除。</div>",
+            unsafe_allow_html=True,
+        )
+
 # ---- 问题清单（卡片）----
+render_section_heading("问题清单", "按严重程度处理，系统不会未经确认修改原始数据")
 with st.container(border=True):
-    st.markdown("**问题清单**")
     issues = result.issues
     if not issues:
         st.success("未发现明显问题。")
@@ -86,6 +101,7 @@ with st.container(border=True):
                 st.info(issue.message)
 
 # ---- 字段概览（卡片）----
+render_section_heading("字段概览", "类型为自动推断，可在清洗页进一步调整")
 with st.container(border=True):
     st.markdown("**字段概览**")
     st.caption("类型为自动推断，可在「③ 数据清洗」中手动调整转换。")
@@ -126,4 +142,4 @@ with st.container(border=True):
                 st.markdown(f"- **{type_label(type_name)}**：{desc}")
         st.caption("异常值仅提示、不自动删除；删除或填充需在「③ 数据清洗」确认。")
 
-st.caption("下一步：从侧边栏进入 **③ 数据清洗**，选择要执行的清洗动作。")
+render_next_step(3, "进入数据清洗，预览动作影响后再执行。")

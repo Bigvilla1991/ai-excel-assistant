@@ -12,12 +12,20 @@ from core.excel_reader import (
 from utils.file_utils import ENCODING_OPTIONS, MAX_ROWS, detect_encoding
 from utils.logger import get_logger
 from utils.session import init_session_state, reset_downstream
-from utils.ui import apply_theme, handle_exception, render_page_header, render_session_status
+from utils.ui import (
+    apply_theme,
+    handle_exception,
+    render_empty_state,
+    render_next_step,
+    render_page_header,
+    render_section_heading,
+    render_session_status,
+)
 
 st.set_page_config(page_title="文件上传", page_icon="📁", layout="wide")
 init_session_state()
 apply_theme()
-render_session_status()
+render_session_status(step=1)
 logger = get_logger("upload_page")
 
 render_page_header("文件上传", "支持 .xlsx / .csv，单文件不超过 20MB，建议不超过 10 万行。", step=1)
@@ -38,18 +46,28 @@ with st.container(border=True):
         help="文件只在本会话内处理，不会上传到任何服务器（AI 调用遵循所选隐私模式）。",
     )
 
-    if uploaded is None:
+    pending = st.session_state.get("pending_upload")
+    if uploaded is None and not pending:
+        render_empty_state(
+            "还没有选择文件",
+            "上传一个 XLSX 或 CSV 文件后，这里会显示解析选项和前 100 行预览。",
+        )
         st.stop()
+
+    # 首页上传后通过 session_state 传递原始字节，避免用户在页面间重复选择文件。
+    upload_name = uploaded.name if uploaded is not None else str(pending["name"])
+    raw_bytes = uploaded.getvalue() if uploaded is not None else bytes(pending["data"])
+    if uploaded is None and pending:
+        st.info(f"已从工作台带入：**{upload_name}**。确认解析选项后即可载入。")
 
     # ---- 校验与元数据 ----
     try:
-        raw_bytes = uploaded.getvalue()
-        suffix = "." + uploaded.name.rsplit(".", 1)[-1].lower()
+        suffix = "." + upload_name.rsplit(".", 1)[-1].lower()
         if suffix == ".csv":
             sheet_options = []
             detected_encoding = detect_encoding(raw_bytes)
         else:
-            sheet_options = list_sheets(uploaded.name, raw_bytes)
+            sheet_options = list_sheets(upload_name, raw_bytes)
             detected_encoding = None
     except Exception as exc:
         handle_exception(exc, logger, "文件校验")
@@ -57,7 +75,7 @@ with st.container(border=True):
     # ---- 选择器（Sheet / 编码 / 表头）----
     # 控件 key 含上传唯一标识 file_id：更换文件时 key 变化 → 状态自动重置，
     # 避免上一个文件的编码/表头选择残留到新文件（数据损坏风险）。
-    fid = uploaded.file_id
+    fid = uploaded.file_id if uploaded is not None else f"pending_{hash(raw_bytes)}"
     col1, col2, col3 = st.columns([2, 2, 3])
     with col1:
         if sheet_options:
@@ -86,29 +104,32 @@ with st.container(border=True):
     # ---- 读取 ----
     try:
         df, meta = read_file(
-            uploaded.name, raw_bytes, sheet=sheet, encoding=encoding, has_header=has_header
+            upload_name, raw_bytes, sheet=sheet, encoding=encoding, has_header=has_header
         )
     except Exception as exc:
         handle_exception(exc, logger, "文件读取")
 
     # ---- 确认入库 ----
     if st.button("确认使用此数据", type="primary", key="confirm_btn"):
-        st.session_state.uploaded_name = uploaded.name
+        st.session_state.uploaded_name = upload_name
         st.session_state.raw_df = df
         st.session_state.file_meta = meta
+        st.session_state.pending_upload = None
         reset_downstream("profile")  # 清除下游分析状态，保留 raw_df
         logger.info(
             "文件已载入 | name=%s rows=%d cols=%d sheet=%s",
-            uploaded.name,
+            upload_name,
             len(df),
             df.shape[1],
             meta["sheet"],
         )
         st.success(
-            f"已确认使用「{uploaded.name}」。接下来请从侧边栏进入 **② 数据体检** 查看数据质量。"
+            f"已确认使用「{upload_name}」。文件已载入，可以开始数据体检。"
         )
+        render_next_step(2, "进入数据体检，先查看质量评分和高优问题。")
 
 # ---- 结果区（卡片）：指标与预览 ----
+render_section_heading("解析结果", "确认前先检查工作表、编码、表头和预览内容")
 with st.container(border=True):
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("行数", f"{meta['row_count']:,}")

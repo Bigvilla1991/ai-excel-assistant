@@ -12,7 +12,9 @@ from utils.session import init_session_state
 from utils.ui import (
     apply_theme,
     handle_exception,
+    render_next_step,
     render_page_header,
+    render_section_heading,
     render_session_status,
     require_profile,
     require_upload,
@@ -53,6 +55,7 @@ date_candidates = [
 ]
 
 # ---- 操作区（卡片）：选择器 ----
+render_section_heading("定义分析视角", "先选指标、维度和聚合方式，下面所有图表与表格共享同一口径")
 with st.container(border=True):
     if using_clean:
         st.caption("正在使用**清洗后**的数据。若需基于原始数据，请到「③ 数据清洗」撤销清洗。")
@@ -142,6 +145,7 @@ with st.container(border=True):
     )
 
 # ---- 结果区（Tabs）----
+render_section_heading("分析结果", "从总体概览进入排名、趋势和关系分析")
 tab_summary, tab_rank, tab_trend, tab_scatter = st.tabs(
     ["📋 汇总统计", "🏆 排名与图表", "📈 趋势", "🔵 散点"]
 )
@@ -303,4 +307,4 @@ with tab_scatter:
         else:
             st.caption("请选择两个不同的数值列。")
 
-st.caption("下一步：从侧边栏进入 **⑤ AI 洞察** 生成解读报告。")
+render_next_step(5, "基于当前指标和筛选口径生成可追溯洞察。")

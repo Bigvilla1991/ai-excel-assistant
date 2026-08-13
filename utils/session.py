@@ -12,6 +12,7 @@ import streamlit as st
 
 # 数据状态（可随文件变更整体清除）
 DATA_KEYS: tuple[str, ...] = (
+    "pending_upload",  # 首页暂存的上传文件（进入解析页前使用）
     "uploaded_name",  # 文件名
     "file_meta",  # 文件元数据（行列数/sheet/编码等）
     "raw_df",  # 原始 DataFrame（只读，永不修改）
