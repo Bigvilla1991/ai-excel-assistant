@@ -85,11 +85,11 @@ _THEME_CSS = """
 .aec-nav-label { margin: 1rem 0 .35rem; color: var(--aec-subtle); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .aec-nav-status { margin: .2rem 0 .5rem; color: var(--aec-muted); font-size: .72rem; }
 
-.aec-hero { padding: 1.2rem 0 1.4rem; }
-.aec-eyebrow { margin-bottom: .7rem; color: var(--aec-brand); font-size: .74rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
-.aec-hero h1 { max-width: 760px; margin: 0; color: var(--aec-ink); font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 820; letter-spacing: -.055em; line-height: 1.03; }
-.aec-hero p { max-width: 690px; margin: 1rem 0 0; color: var(--aec-muted); font-size: 1.05rem; line-height: 1.7; }
-.aec-hero-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+.aec-hero { padding: .65rem 0 1.05rem; }
+.aec-eyebrow { margin-bottom: .6rem; color: var(--aec-brand); font-size: .74rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+.aec-hero h1 { max-width: none; margin: 0; color: var(--aec-ink); font-size: clamp(2.3rem, 4.3vw, 3.35rem); font-weight: 820; letter-spacing: -.05em; line-height: 1.08; }
+.aec-hero p { max-width: 760px; margin: .85rem 0 0; color: var(--aec-muted); font-size: .98rem; line-height: 1.6; }
+.aec-hero-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
 .aec-meta-pill { padding: .32rem .6rem; border: 1px solid var(--aec-line); border-radius: 999px; background: var(--aec-surface); color: var(--aec-muted); font-size: .74rem; }
 
 .aec-page-title { margin: .2rem 0 1.25rem; }
@@ -105,7 +105,7 @@ _THEME_CSS = """
 .aec-step-item.is-active { color: var(--aec-brand-strong); font-weight: 700; }
 .aec-step-item.is-active .aec-step-dot { border-color: var(--aec-brand); background: var(--aec-brand); color: #fff; box-shadow: 0 0 0 4px var(--aec-brand-soft); }
 
-.aec-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .7rem; }
+.aec-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 1.05rem 0 .65rem; }
 .aec-section-head h2 { margin: 0; color: var(--aec-ink); font-size: 1.08rem; letter-spacing: -.02em; }
 .aec-section-head p { margin: 0; color: var(--aec-muted); font-size: .78rem; }
 .aec-card { height: 100%; padding: 1rem 1.05rem; border: 1px solid var(--aec-line); border-radius: .85rem; background: var(--aec-surface); box-shadow: 0 1px 2px rgba(16,24,40,.02); }
