@@ -87,7 +87,7 @@ _THEME_CSS = """
 
 .aec-hero { padding: .65rem 0 1.05rem; }
 .aec-eyebrow { margin-bottom: .6rem; color: var(--aec-brand); font-size: .74rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
-.aec-hero h1 { max-width: none; margin: 0; color: var(--aec-ink); font-size: clamp(2.3rem, 4.3vw, 3.35rem); font-weight: 820; letter-spacing: -.05em; line-height: 1.08; }
+.aec-hero h1 { max-width: none; margin: 0; color: var(--aec-ink); font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 820; letter-spacing: -.05em; line-height: 1.08; }
 .aec-hero p { max-width: 760px; margin: .85rem 0 0; color: var(--aec-muted); font-size: .98rem; line-height: 1.6; }
 .aec-hero-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
 .aec-meta-pill { padding: .32rem .6rem; border: 1px solid var(--aec-line); border-radius: 999px; background: var(--aec-surface); color: var(--aec-muted); font-size: .74rem; }
