@@ -15,7 +15,6 @@ from utils.session import init_session_state, reset_downstream
 from utils.ui import (
     apply_theme,
     handle_exception,
-    render_empty_state,
     render_next_step,
     render_page_header,
     render_section_heading,
@@ -28,10 +27,11 @@ apply_theme()
 render_session_status(step=1)
 logger = get_logger("upload_page")
 
-render_page_header("文件上传", "支持 .xlsx / .csv，单文件不超过 20MB，建议不超过 10 万行。", step=1)
+render_page_header("文件上传", "先选择文件，再确认解析选项和预览内容。", step=1)
 
 # ---- 操作区（卡片）：上传与解析选项 ----
-with st.container(border=True):
+render_section_heading("选择文件", "支持 .xlsx / .csv，单文件不超过 20MB，建议不超过 10 万行。")
+with st.container():
     # 已载入数据提示
     if st.session_state.raw_df is not None:
         cur = st.session_state.raw_df
@@ -48,9 +48,10 @@ with st.container(border=True):
 
     pending = st.session_state.get("pending_upload")
     if uploaded is None and not pending:
-        render_empty_state(
-            "还没有选择文件",
-            "上传一个 XLSX 或 CSV 文件后，这里会显示解析选项和前 100 行预览。",
+        st.markdown(
+            '<div class="aec-upload-empty"><strong>尚未选择文件</strong>'
+            '<span>上传后显示解析选项和前 100 行预览。</span></div>',
+            unsafe_allow_html=True,
         )
         st.stop()
 
