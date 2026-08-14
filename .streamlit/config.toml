@@ -5,6 +5,10 @@ port = 8501
 maxUploadSize = 20
 
 [browser]
+
+[client]
+# 使用产品内置工作流导航，隐藏 Streamlit 自动生成的重复页面导航
+showSidebarNavigation = false
 gatherUsageStats = false
 
 [theme]
