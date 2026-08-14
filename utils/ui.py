@@ -119,6 +119,9 @@ _THEME_CSS = """
 .aec-empty { padding: 1.45rem; border: 1px dashed #C8D0DC; border-radius: .9rem; background: rgba(255,255,255,.65); text-align: center; }
 .aec-empty h3 { margin: 0 0 .35rem; color: var(--aec-ink); font-size: 1rem; }
 .aec-empty p { margin: 0; color: var(--aec-muted); font-size: .82rem; }
+.aec-upload-empty { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .75rem; margin-top: .4rem; padding: .8rem 1rem; border: 1px dashed #C8D0DC; border-radius: .75rem; background: rgba(255,255,255,.65); }
+.aec-upload-empty strong { color: var(--aec-ink); font-size: .86rem; }
+.aec-upload-empty span { color: var(--aec-muted); font-size: .78rem; }
 .aec-footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--aec-line); color: var(--aec-subtle); font-size: .72rem; text-align: center; }
 
 .stButton > button, .stDownloadButton > button { min-height: 2.55rem; border-radius: .65rem; font-weight: 680; }
@@ -180,7 +183,7 @@ def render_session_status(step: int | None = None) -> None:
             '<div class="aec-brand-sub">从原始表格到可交付结论</div></div>',
             unsafe_allow_html=True,
         )
-        _safe_page_link("app.py", "工作台", "⌂")
+        _safe_page_link("app.py", "工作台", "🏠")
         st.markdown('<div class="aec-nav-label">工作流</div>', unsafe_allow_html=True)
         completed = _completed_steps()
         for index, (name, path, icon) in enumerate(
