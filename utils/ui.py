@@ -69,10 +69,11 @@ _THEME_CSS = """
 
 /* Keep the canvas calm and reserve emphasis for the current task. */
 .stApp { background: var(--aec-canvas); color: var(--aec-ink); }
-[data-testid="stHeader"] { background: rgba(247,248,250,.86); }
+[data-testid="stHeader"] { background: var(--aec-canvas); z-index: 1000000; }
+[data-testid="stSidebarNav"] { display: none !important; }
 [data-testid="stSidebar"] { background: #FBFCFE; border-right: 1px solid var(--aec-line); }
 [data-testid="stSidebar"] > div:first-child { padding-top: 1.1rem; }
-[data-testid="stMainBlockContainer"] { max-width: 1240px; padding-top: 1.5rem; padding-bottom: 3rem; }
+[data-testid="stMainBlockContainer"] { max-width: 1240px; padding-top: 4rem; padding-bottom: 3rem; }
 
 .aec-brand { padding: .15rem .2rem .85rem; }
 .aec-brand-mark { display: flex; align-items: center; gap: .55rem; color: var(--aec-ink); font-size: 1.05rem; font-weight: 760; letter-spacing: -.02em; }
@@ -95,7 +96,7 @@ _THEME_CSS = """
 .aec-page-title h1 { margin: 0; color: var(--aec-ink); font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.15; }
 .aec-page-title p { max-width: 760px; margin: .45rem 0 0; color: var(--aec-muted); font-size: .94rem; line-height: 1.55; }
 .aec-stepper { display: flex; align-items: flex-start; gap: .35rem; margin: .2rem 0 1rem; overflow-x: auto; padding-bottom: .35rem; }
-.aec-step-item { display: flex; min-width: 7.2rem; align-items: center; gap: .45rem; color: var(--aec-subtle); font-size: .73rem; white-space: nowrap; }
+.aec-step-item { display: flex; min-width: 7.2rem; align-items: center; gap: .45rem; color: var(--aec-muted); font-size: .73rem; white-space: nowrap; }
 .aec-step-item::after { content: ""; width: 1.7rem; height: 1px; margin-left: .15rem; background: var(--aec-line); }
 .aec-step-item:last-child::after { display: none; }
 .aec-step-dot { display: grid; flex: 0 0 auto; place-items: center; width: 1.65rem; height: 1.65rem; border: 1px solid var(--aec-line); border-radius: 50%; background: var(--aec-surface); font-size: .72rem; }
@@ -133,7 +134,7 @@ div[data-testid="stForm"], div[data-testid="stExpander"] { border-color: var(--a
 [data-testid="stAlert"] { border-radius: .7rem; }
 .stProgress > div > div > div { background: var(--aec-brand); }
 @media (max-width: 760px) {
-  [data-testid="stMainBlockContainer"] { padding: 1rem .8rem 2.5rem; }
+  [data-testid="stMainBlockContainer"] { padding: 4rem .8rem 2.5rem; }
   .aec-step-item { min-width: 6.4rem; }
   .aec-step-item::after { width: .8rem; }
   .aec-hero h1 { font-size: 2.35rem; }
