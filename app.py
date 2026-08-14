@@ -37,7 +37,7 @@ def _go_to_upload(uploaded: object | None) -> None:
 st.markdown(
     '<div class="aec-hero">'
     '<div class="aec-eyebrow">DATA WORKSPACE · V1.1</div>'
-    '<h1>把 Excel 整理工作，变成一条清晰的任务流。</h1>'
+    '<h1>Excel 整理，变成清晰的任务流</h1>'
     '<p>上传文件后，系统会依次完成解析、体检、清洗、分析、AI 解读与结果交付。'
     '每一步都保留原始数据、处理依据和可追溯结果。</p>'
     '<div class="aec-hero-meta"><span class="aec-meta-pill">支持 XLSX / CSV</span>'
